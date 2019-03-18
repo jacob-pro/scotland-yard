@@ -119,6 +119,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		Optional<Map<Ticket, Integer>> tickets = cfg.map(c -> c.tickets);
 		return tickets.map(t -> t.get(ticket));
 	}
+	//i'm helping
 
 	@Override
 	public boolean isGameOver() {
