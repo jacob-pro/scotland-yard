@@ -16,18 +16,18 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	private int currentRound = NOT_STARTED;
 
 	private void validateTicketsMap(Map<Ticket, Integer> map) {
-	    for (Ticket ticket: Ticket.values()) {
-	        if (!map.containsKey(ticket)) {
-	            throw new IllegalArgumentException("Tickets map must be populated with values for all tickets");
-            }
-        }
-    }
+		for (Ticket ticket: Ticket.values()) {
+			if (!map.containsKey(ticket)) {
+				throw new IllegalArgumentException("Tickets map must be populated with values for all tickets");
+			}
+		}
+	}
 
 	private List<PlayerConfiguration> validatePlayerConfigurations(PlayerConfiguration mrX,
 																   PlayerConfiguration firstDetective,
 																   PlayerConfiguration... restOfTheDetectives) {
 
-	    //Check MrX exists and is not null
+		//Check MrX exists and is not null
 		Objects.requireNonNull(mrX,"MrX must not be null");
 		if (!mrX.colour.isMrX()) throw new IllegalArgumentException("First player must be mrX");
 
@@ -43,20 +43,20 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		Set<Colour> allColours = new HashSet<>();
 		Set<Integer> allLocations = new HashSet<>();
 		playerConfigurations.forEach(cfg -> {
-		    //Check colours
-            if (allColours.contains(cfg.colour)) throw new IllegalArgumentException("Duplicate player colour");
-            allColours.add(cfg.colour);
-            //Check locations
-            if (allLocations.contains(cfg.location)) throw new IllegalArgumentException("Duplicate player location");
-            allLocations.add(cfg.location);
-            // Check player ticket maps
-            this.validateTicketsMap(cfg.tickets);
-            // Check detective double tickets
-            if (cfg.colour.isDetective()) {
-                if (cfg.tickets.get(Ticket.SECRET) > 0) throw new IllegalArgumentException("Detectives must not have secret tickets");
-                if (cfg.tickets.get(Ticket.DOUBLE) > 0) throw new IllegalArgumentException("Detectives must not have double tickets");
-            }
-        });
+			//Check colours
+			if (allColours.contains(cfg.colour)) throw new IllegalArgumentException("Duplicate player colour");
+			allColours.add(cfg.colour);
+			//Check locations
+			if (allLocations.contains(cfg.location)) throw new IllegalArgumentException("Duplicate player location");
+			allLocations.add(cfg.location);
+			// Check player ticket maps
+			this.validateTicketsMap(cfg.tickets);
+			// Check detective double tickets
+			if (cfg.colour.isDetective()) {
+				if (cfg.tickets.get(Ticket.SECRET) > 0) throw new IllegalArgumentException("Detectives must not have secret tickets");
+				if (cfg.tickets.get(Ticket.DOUBLE) > 0) throw new IllegalArgumentException("Detectives must not have double tickets");
+			}
+		});
 
 		return playerConfigurations;
 	}
@@ -109,15 +109,15 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public Optional<Integer> getPlayerLocation(Colour colour) {
-	    Optional<PlayerConfiguration> cfg = this.playerConfigurations.stream().filter(c -> c.colour == colour).findFirst();
-	    return cfg.map(c -> c.location);
+		Optional<PlayerConfiguration> cfg = this.playerConfigurations.stream().filter(c -> c.colour == colour).findFirst();
+		return cfg.map(c -> c.location);
 	}
 
 	@Override
 	public Optional<Integer> getPlayerTickets(Colour colour, Ticket ticket) {
-        Optional<PlayerConfiguration> cfg = this.playerConfigurations.stream().filter(c -> c.colour == colour).findFirst();
-        Optional<Map<Ticket, Integer>> tickets = cfg.map(c -> c.tickets);
-        return tickets.map(t -> t.get(ticket));
+		Optional<PlayerConfiguration> cfg = this.playerConfigurations.stream().filter(c -> c.colour == colour).findFirst();
+		Optional<Map<Ticket, Integer>> tickets = cfg.map(c -> c.tickets);
+		return tickets.map(t -> t.get(ticket));
 	}
 
 	@Override
