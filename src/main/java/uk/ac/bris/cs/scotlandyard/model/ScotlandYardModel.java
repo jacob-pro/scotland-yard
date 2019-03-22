@@ -139,54 +139,61 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		Objects.requireNonNull(move, "Move must not be null");
 		if (!validMoves.contains(move)) throw new IllegalArgumentException("Invalid move");
 
-		MakeMoveVisitor visitor = new MakeMoveVisitor(player);
-		move.visit(visitor);
+		if (player.isMrX()) {
+			this.spectators.forEach(s -> s.onRoundStarted(this, this.currentRound));
+		}
 
-		this.spectators.forEach(s -> s.onMoveMade(this, visitor.moveMade));
+		move.visit(new MoveVisitor() {
+
+			private void movePlayer(int destination) {
+				player.location(destination);
+				//ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(this, visitor.moveMade));
+			}
+
+			@Override
+			public void visit(PassMove move) {
+				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move));
+			}
+
+			@Override
+			public void visit(TicketMove move) {
+				player.removeTicket(move.ticket());
+				this.movePlayer(move.destination());
+				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move));
+				if (player.isMrX()) ScotlandYardModel.this.currentRound++;
+			}
+
+			//Note that a DoubleMove implies this is MrX
+			//We must notify the spectators first with the double move, and then again with the first and second moves
+			@Override
+			public void visit(DoubleMove move) {
+
+				player.removeTicket(Ticket.DOUBLE);
+				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move));
+
+				player.removeTicket(move.firstMove().ticket());
+				this.movePlayer(move.firstMove().destination());
+				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move.firstMove()));
+
+				//A double move starts a new round
+				ScotlandYardModel.this.currentRound++;
+				ScotlandYardModel.this.spectators.forEach(s -> s.onRoundStarted(ScotlandYardModel.this, ScotlandYardModel.this.currentRound));
+
+				player.removeTicket(move.secondMove().ticket());
+				this.movePlayer(move.secondMove().destination());
+				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move.secondMove()));
+			}
+
+		});
 
 		//Rotate the players
 		Collections.rotate(this.players, 1);
+
 		//If the next player is now MrX then a rotation must have been completed
 		if (this.getCurrentPlayer().isMrX()) {
 			this.spectators.forEach(s -> s.onRotationComplete(this));
 		} else {
 			this.startRotate();
-		}
-	}
-
-	class MakeMoveVisitor implements MoveVisitor {
-		private ScotlandYardPlayer player;
-		private Move moveMade;
-
-		MakeMoveVisitor(ScotlandYardPlayer player) {
-			this.player = player;
-		}
-
-		private void movePlayer(int destination) {
-			this.player.location(destination);
-		}
-
-		@Override
-		public void visit(PassMove move) {
-			moveMade = move;
-		}
-
-		@Override
-		public void visit(TicketMove move) {
-			if (player.isMrX()) ScotlandYardModel.this.currentRound += 1;
-			player.removeTicket(move.ticket());
-			this.movePlayer(move.destination());
-			this.moveMade = move;
-		}
-
-		@Override
-		public void visit(DoubleMove move) {
-			if (player.isMrX()) ScotlandYardModel.this.currentRound += 2;
-			player.removeTicket(Ticket.DOUBLE);
-			player.removeTicket(move.firstMove().ticket());
-			player.removeTicket(move.secondMove().ticket());
-			this.movePlayer(move.finalDestination());
-			this.moveMade = move.secondMove();
 		}
 	}
 
