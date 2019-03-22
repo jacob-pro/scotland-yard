@@ -3,7 +3,6 @@ package uk.ac.bris.cs.scotlandyard.model;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import uk.ac.bris.cs.gamekit.graph.Edge;
 import uk.ac.bris.cs.gamekit.graph.Graph;
@@ -71,8 +70,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			PlayerConfiguration mrX, PlayerConfiguration firstDetective,
 			PlayerConfiguration... restOfTheDetectives) {
 
-		this.rounds = Objects.requireNonNull(rounds);
-		this.graph = Objects.requireNonNull(graph);
+		this.rounds = Objects.requireNonNull(rounds, "Rounds must not be null");
+		this.graph = Objects.requireNonNull(graph, "Graph must not be null");
 		this.players = this.createPlayers(mrX, firstDetective, restOfTheDetectives);
 	}
 
@@ -136,8 +135,59 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return moves;
 	}
 
-	private void makeMove(Set<Move> validMoves, Move move) {
+	private void makeMove(ScotlandYardPlayer player, Set<Move> validMoves, Move move) {
+		Objects.requireNonNull(move, "Move must not be null");
+		if (!validMoves.contains(move)) throw new IllegalArgumentException("Invalid move");
 
+		MakeMoveVisitor visitor = new MakeMoveVisitor(player);
+		move.visit(visitor);
+
+		this.spectators.forEach(s -> s.onMoveMade(this, visitor.moveMade));
+
+		//Rotate the players
+		Collections.rotate(this.players, 1);
+		//If the next player is now MrX then a rotation must have been completed
+		if (this.getCurrentPlayer().isMrX()) {
+			this.spectators.forEach(s -> s.onRotationComplete(this));
+		} else {
+			this.startRotate();
+		}
+	}
+
+	class MakeMoveVisitor implements MoveVisitor {
+		private ScotlandYardPlayer player;
+		private Move moveMade;
+
+		MakeMoveVisitor(ScotlandYardPlayer player) {
+			this.player = player;
+		}
+
+		private void movePlayer(int destination) {
+			this.player.location(destination);
+		}
+
+		@Override
+		public void visit(PassMove move) {
+			moveMade = move;
+		}
+
+		@Override
+		public void visit(TicketMove move) {
+			if (player.isMrX()) ScotlandYardModel.this.currentRound += 1;
+			player.removeTicket(move.ticket());
+			this.movePlayer(move.destination());
+			this.moveMade = move;
+		}
+
+		@Override
+		public void visit(DoubleMove move) {
+			if (player.isMrX()) ScotlandYardModel.this.currentRound += 2;
+			player.removeTicket(Ticket.DOUBLE);
+			player.removeTicket(move.firstMove().ticket());
+			player.removeTicket(move.secondMove().ticket());
+			this.movePlayer(move.finalDestination());
+			this.moveMade = move.secondMove();
+		}
 	}
 
 	//An explanation of the Consumer callback
@@ -150,8 +200,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	public void startRotate() {
 		ScotlandYardPlayer currentPlayer = this.players.get(0);
 		Set<Move> validMoves = this.validMovesForPlayer(currentPlayer);
-		currentPlayer.player().makeMove(this, currentPlayer.location(), validMoves, move -> this.makeMove(validMoves, move));
-		Collections.rotate(this.players, 1);
+		currentPlayer.player().makeMove(this, currentPlayer.location(), validMoves, move -> this.makeMove(currentPlayer, validMoves, move));
 	}
 
 	@Override
