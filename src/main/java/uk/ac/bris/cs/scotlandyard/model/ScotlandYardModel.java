@@ -18,6 +18,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	private List<ScotlandYardPlayer> players;
 	private Set<ScotlandYardPlayer> winningPlayers = new HashSet<>();
 	private int currentRound = NOT_STARTED;
+	private int lastKnownMrXLocation = 0;		//Hidden location is apparently 0
 
 	private void validateTicketsMap(Map<Ticket, Integer> map) {
 		for (Ticket ticket: Ticket.values()) {
@@ -143,12 +144,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			this.spectators.forEach(s -> s.onRoundStarted(this, this.currentRound));
 		}
 
+		//This is an anonymous class that implements the MoveVisitor interface
 		move.visit(new MoveVisitor() {
-
-			private void movePlayer(int destination) {
-				player.location(destination);
-				//ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(this, visitor.moveMade));
-			}
 
 			@Override
 			public void visit(PassMove move) {
@@ -158,9 +155,15 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			@Override
 			public void visit(TicketMove move) {
 				player.removeTicket(move.ticket());
-				this.movePlayer(move.destination());
-				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move));
-				if (player.isMrX()) ScotlandYardModel.this.currentRound++;
+				player.location(move.destination());
+				if (player.isMrX()) {
+					if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound)) ScotlandYardModel.this.lastKnownMrXLocation = player.location();
+					Move concealedMove = new TicketMove(move.colour(), move.ticket(), ScotlandYardModel.this.lastKnownMrXLocation);
+					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove));
+					ScotlandYardModel.this.currentRound++;
+				} else {
+					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move));
+				}
 			}
 
 			//Note that a DoubleMove implies this is MrX
@@ -168,22 +171,29 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			@Override
 			public void visit(DoubleMove move) {
 
+				if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound)) ScotlandYardModel.this.lastKnownMrXLocation = move.firstMove().destination();
+				int firstMoveConcealed = ScotlandYardModel.this.lastKnownMrXLocation;
+				if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound + 1)) ScotlandYardModel.this.lastKnownMrXLocation = move.secondMove().destination();
+				int secondMoveConcealed = ScotlandYardModel.this.lastKnownMrXLocation;
+				DoubleMove concealedMove = new DoubleMove(move.colour(), move.firstMove().ticket(), firstMoveConcealed, move.secondMove().ticket(), secondMoveConcealed);
+
 				player.removeTicket(Ticket.DOUBLE);
-				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move));
+				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove));
 
 				player.removeTicket(move.firstMove().ticket());
-				this.movePlayer(move.firstMove().destination());
-				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move.firstMove()));
+				player.location(move.firstMove().destination());
+				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove.firstMove()));
+				ScotlandYardModel.this.currentRound++;
 
 				//A double move starts a new round
-				ScotlandYardModel.this.currentRound++;
 				ScotlandYardModel.this.spectators.forEach(s -> s.onRoundStarted(ScotlandYardModel.this, ScotlandYardModel.this.currentRound));
 
 				player.removeTicket(move.secondMove().ticket());
-				this.movePlayer(move.secondMove().destination());
-				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move.secondMove()));
-			}
+				player.location(move.secondMove().destination());
+				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove.secondMove()));
+				ScotlandYardModel.this.currentRound++;
 
+			}
 		});
 
 		//Rotate the players
@@ -228,7 +238,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	public Optional<Integer> getPlayerLocation(Colour colour) {
 		Optional<ScotlandYardPlayer> cfg = this.players.stream().filter(c -> c.colour() == colour).findFirst();
-		return cfg.map(ScotlandYardPlayer::location);
+		return cfg.map(p -> p.isMrX() ? this.lastKnownMrXLocation : p.location());
 	}
 
 	@Override
