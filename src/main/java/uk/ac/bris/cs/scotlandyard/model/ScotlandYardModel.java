@@ -28,6 +28,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 	}
 
+	private boolean listContainsDuplicates(List list) {
+		return list.size() != list.stream().distinct().count();
+	}
+
 	private List<ScotlandYardPlayer> createPlayers(PlayerConfiguration mrX,
 													PlayerConfiguration firstDetective,
 													PlayerConfiguration... restOfTheDetectives) {
@@ -45,15 +49,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 
 		//Validate the player configurations
-		Set<Colour> allColours = new HashSet<>();
-		Set<Integer> allLocations = new HashSet<>();
+		if(listContainsDuplicates(playerConfigurations.stream().map(c -> c.colour).collect(Collectors.toList()))) throw new IllegalArgumentException("Duplicate player colour");
+		if(listContainsDuplicates(playerConfigurations.stream().map(c -> c.location).collect(Collectors.toList()))) throw new IllegalArgumentException("Duplicate player colour");
+
 		playerConfigurations.forEach(cfg -> {
-			//Check colours
-			if (allColours.contains(cfg.colour)) throw new IllegalArgumentException("Duplicate player colour");
-			allColours.add(cfg.colour);
-			//Check locations
-			if (allLocations.contains(cfg.location)) throw new IllegalArgumentException("Duplicate player location");
-			allLocations.add(cfg.location);
 			// Check player ticket maps
 			this.validateTicketsMap(cfg.tickets);
 			// Check detective double tickets
