@@ -1,8 +1,13 @@
 package uk.ac.bris.cs.scotlandyard.model;
 
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
-import uk.ac.bris.cs.gamekit.graph.*;
+
+import uk.ac.bris.cs.gamekit.graph.Edge;
+import uk.ac.bris.cs.gamekit.graph.Graph;
+import uk.ac.bris.cs.gamekit.graph.Node;
+import uk.ac.bris.cs.gamekit.graph.ImmutableGraph;
 
 // TODO implement all methods and pass all tests
 public class ScotlandYardModel implements ScotlandYardGame {
@@ -23,6 +28,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				throw new IllegalArgumentException("Tickets map must be populated with values for all tickets");
 			}
 		}
+	}
+
+	private boolean listContainsDuplicates(List list) {
+		return list.size() != list.stream().distinct().count();
 	}
 
 	private void populateWinningPlayers() {
@@ -52,15 +61,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 
 		//Validate the player configurations
-		Set<Colour> allColours = new HashSet<>();
-		Set<Integer> allLocations = new HashSet<>();
+		if(listContainsDuplicates(playerConfigurations.stream().map(c -> c.colour).collect(Collectors.toList()))) throw new IllegalArgumentException("Duplicate player colour");
+		if(listContainsDuplicates(playerConfigurations.stream().map(c -> c.location).collect(Collectors.toList()))) throw new IllegalArgumentException("Duplicate player colour");
+
 		playerConfigurations.forEach(cfg -> {
-			//Check colours
-			if (allColours.contains(cfg.colour)) throw new IllegalArgumentException("Duplicate player colour");
-			allColours.add(cfg.colour);
-			//Check locations
-			if (allLocations.contains(cfg.location)) throw new IllegalArgumentException("Duplicate player location");
-			allLocations.add(cfg.location);
 			// Check player ticket maps
 			this.validateTicketsMap(cfg.tickets);
 			// Check detective double tickets
@@ -129,7 +133,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		Set<TicketMove> firsts = this.generateTicketMovesForPlayerFromLocation(player, player.location());
 		Set<Move> moves = new HashSet<>(firsts);
 
-		if (player.hasTickets(Ticket.DOUBLE)) {
+		if(player.hasTickets(Ticket.DOUBLE)) {
 			firsts.forEach(potentialFirst -> {
 				player.removeTicket(potentialFirst.ticket());
 				moves.addAll(this.generateTicketMovesForPlayerFromLocation(player, potentialFirst.destination()).stream()
