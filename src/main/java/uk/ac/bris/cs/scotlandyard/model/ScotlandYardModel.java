@@ -1,13 +1,8 @@
 package uk.ac.bris.cs.scotlandyard.model;
 
 import java.util.*;
-import java.util.List;
 import java.util.stream.Collectors;
-
-import uk.ac.bris.cs.gamekit.graph.Edge;
-import uk.ac.bris.cs.gamekit.graph.Graph;
-import uk.ac.bris.cs.gamekit.graph.Node;
-import uk.ac.bris.cs.gamekit.graph.ImmutableGraph;
+import uk.ac.bris.cs.gamekit.graph.*;
 
 // TODO implement all methods and pass all tests
 public class ScotlandYardModel implements ScotlandYardGame {
@@ -15,6 +10,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	private Collection<Spectator> spectators = new HashSet<>();
 	private List<Boolean> rounds;
 	private Graph<Integer, Transport> graph;
+	private ScotlandYardPlayer mrX;				//Reference to MrX
+	private Set<ScotlandYardPlayer> detectives;	//Unordered references of the detectives
 	private List<ScotlandYardPlayer> players;
 	private Set<ScotlandYardPlayer> winningPlayers = new HashSet<>();
 	private int currentRound = NOT_STARTED;
@@ -28,9 +25,19 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 	}
 
-	private List<ScotlandYardPlayer> createPlayers(PlayerConfiguration mrX,
-													PlayerConfiguration firstDetective,
-													PlayerConfiguration... restOfTheDetectives) {
+	private void populateWinningPlayers() {
+		//Detectives have won if the player has caught MrX, or MrX is now unable to move
+		//MrX wins if all rounds are complete, or all detectives are only able to PassMove
+		if (detectives.stream().anyMatch(d -> d.location() == this.mrX.location()) || this.validMovesForPlayer(this.mrX).isEmpty()) {
+			this.winningPlayers.addAll(this.detectives);
+		} else if (this.currentRound == rounds.size() || this.detectives.stream().flatMap(p -> this.validMovesForPlayer(p).stream()).allMatch(m -> m instanceof PassMove)) {
+			this.winningPlayers.add(this.mrX);
+		}
+	}
+
+	private void createPlayers(PlayerConfiguration mrX,
+												   PlayerConfiguration firstDetective,
+												   PlayerConfiguration... restOfTheDetectives) {
 
 		//Check MrX exists and is not null
 		Objects.requireNonNull(mrX,"MrX must not be null");
@@ -63,8 +70,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			}
 		});
 
-		return playerConfigurations.stream()
-				.map(c -> new ScotlandYardPlayer(c.player, c.colour, c.location, c.tickets)).collect(Collectors.toList());
+		this.players = playerConfigurations.stream().map(c -> new ScotlandYardPlayer(c.player, c.colour, c.location, c.tickets)).collect(Collectors.toList());
+		this.mrX = this.players.get(0);
+		this.detectives = new HashSet<>(this.players.subList(1, this.players.size()));
 	}
 
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
@@ -73,7 +81,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		this.rounds = Objects.requireNonNull(rounds, "Rounds must not be null");
 		this.graph = Objects.requireNonNull(graph, "Graph must not be null");
-		this.players = this.createPlayers(mrX, firstDetective, restOfTheDetectives);
+		this.createPlayers(mrX, firstDetective, restOfTheDetectives);
+		this.populateWinningPlayers();
 	}
 
 	@Override
@@ -120,7 +129,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		Set<TicketMove> firsts = this.generateTicketMovesForPlayerFromLocation(player, player.location());
 		Set<Move> moves = new HashSet<>(firsts);
 
-		if(player.hasTickets(Ticket.DOUBLE)) {
+		if (player.hasTickets(Ticket.DOUBLE)) {
 			firsts.forEach(potentialFirst -> {
 				player.removeTicket(potentialFirst.ticket());
 				moves.addAll(this.generateTicketMovesForPlayerFromLocation(player, potentialFirst.destination()).stream()
@@ -199,11 +208,17 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		//Rotate the players
 		Collections.rotate(this.players, 1);
 
+		this.populateWinningPlayers();
+
+		if (!this.winningPlayers.isEmpty()) {
+			this.spectators.forEach(s -> s.onGameOver(this, this.getWinningPlayers()));
+		}
+
 		//If the next player is now MrX then a rotation must have been completed
 		if (this.getCurrentPlayer().isMrX()) {
 			this.spectators.forEach(s -> s.onRotationComplete(this));
 		} else {
-			this.startRotate();
+			this.startNextMove();
 		}
 	}
 
@@ -213,11 +228,16 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	//A Consumer is a functional interface, meaning that it only has one abstract (non default) method
 	//A functional interface can be passed as as a lambda expression that matches the signature of its single method
 
-	@Override
-	public void startRotate() {
+	private void startNextMove() {
 		ScotlandYardPlayer currentPlayer = this.players.get(0);
 		Set<Move> validMoves = this.validMovesForPlayer(currentPlayer);
 		currentPlayer.player().makeMove(this, currentPlayer.location(), validMoves, move -> this.makeMove(currentPlayer, validMoves, move));
+	}
+
+	@Override
+	public void startRotate() {
+		if (!this.winningPlayers.isEmpty()) throw new IllegalStateException("The game is over");
+		this.startNextMove();
 	}
 
 	@Override
