@@ -35,11 +35,18 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	}
 
 	private void populateWinningPlayers() {
-		//Detectives have won if the player has caught MrX, or MrX is now unable to move
-		//MrX wins if all rounds are complete, or all detectives are only able to PassMove
-		if (detectives.stream().anyMatch(d -> d.location() == this.mrX.location()) || this.validMovesForPlayer(this.mrX).isEmpty()) {
+		boolean mrXisNext = this.getCurrentPlayer().isMrX();
+		//Detectives have win if they have caught MrX
+		//Or if MrX is unable to move on his turn
+		//MrX wins if rounds are complete
+		//Or all detectives are stuck (i.e. can only PassMove)
+		if (detectives.stream().anyMatch(d -> d.location() == this.mrX.location())) {
 			this.winningPlayers.addAll(this.detectives);
-		} else if (this.currentRound == rounds.size() || this.detectives.stream().flatMap(p -> this.validMovesForPlayer(p).stream()).allMatch(m -> m instanceof PassMove)) {
+		} else if (mrXisNext && this.validMovesForPlayer(this.mrX).isEmpty()) {
+			this.winningPlayers.addAll(this.detectives);
+		} else if (this.currentRound == rounds.size()) {
+			this.winningPlayers.add(this.mrX);
+		} else if (this.detectives.stream().flatMap(p -> this.validMovesForPlayer(p).stream()).allMatch(m -> m instanceof PassMove)) {
 			this.winningPlayers.add(this.mrX);
 		}
 	}
@@ -119,7 +126,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				if (player.hasTickets(requiredTicketType)) {
 					ticketMoves.add(new TicketMove(player.colour(), requiredTicketType, edge.destination().value()));
 				}
-				if (player.hasTickets(requiredTicketType)) {
+				if (player.hasTickets(Ticket.SECRET)) {
 					ticketMoves.add(new TicketMove(player.colour(), Ticket.SECRET, edge.destination().value()));
 				}
 			}
@@ -128,12 +135,16 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return ticketMoves;
 	}
 
+	private int remainingRounds() {
+		return rounds.size() - this.currentRound;
+	}
+
 	private Set<Move> validMovesForPlayer(ScotlandYardPlayer player) {
 
 		Set<TicketMove> firsts = this.generateTicketMovesForPlayerFromLocation(player, player.location());
 		Set<Move> moves = new HashSet<>(firsts);
 
-		if(player.hasTickets(Ticket.DOUBLE)) {
+		if(player.hasTickets(Ticket.DOUBLE) && this.remainingRounds() >= 2) {
 			firsts.forEach(potentialFirst -> {
 				player.removeTicket(potentialFirst.ticket());
 				moves.addAll(this.generateTicketMovesForPlayerFromLocation(player, potentialFirst.destination()).stream()
@@ -175,6 +186,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove));
 					ScotlandYardModel.this.currentRound++;
 				} else {
+					ScotlandYardModel.this.mrX.addTicket(move.ticket());
 					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move));
 				}
 			}
@@ -219,7 +231,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 
 		//If the next player is now MrX then a rotation must have been completed
-		if (this.getCurrentPlayer().isMrX()) {
+		else if (this.getCurrentPlayer().isMrX()) {
 			this.spectators.forEach(s -> s.onRotationComplete(this));
 		} else {
 			this.startNextMove();
