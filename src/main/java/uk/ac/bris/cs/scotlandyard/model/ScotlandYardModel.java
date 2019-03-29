@@ -44,7 +44,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			this.winningPlayers.addAll(this.detectives);
 		} else if (mrXisNext && this.validMovesForPlayer(this.mrX).isEmpty()) {
 			this.winningPlayers.addAll(this.detectives);
-		} else if (this.currentRound == rounds.size()) {
+		} else if (this.remainingRounds() == 0) {
 			this.winningPlayers.add(this.mrX);
 		} else if (this.detectives.stream().flatMap(p -> this.validMovesForPlayer(p).stream()).allMatch(m -> m instanceof PassMove)) {
 			this.winningPlayers.add(this.mrX);
@@ -228,10 +228,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		if (!this.winningPlayers.isEmpty()) {
 			this.spectators.forEach(s -> s.onGameOver(this, this.getWinningPlayers()));
-		}
-
-		//If the next player is now MrX then a rotation must have been completed
-		else if (this.getCurrentPlayer().isMrX()) {
+		} else if (this.getCurrentPlayer().isMrX()) {				//If the next player is now MrX then a rotation must have been completed
 			this.spectators.forEach(s -> s.onRotationComplete(this));
 		} else {
 			this.startNextMove();
@@ -283,7 +280,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		Optional<Map<Ticket, Integer>> tickets = cfg.map(ScotlandYardPlayer::tickets);
 		return tickets.map(t -> t.get(ticket));
 	}
-	//i'm helping
 
 	@Override
 	public boolean isGameOver() {
