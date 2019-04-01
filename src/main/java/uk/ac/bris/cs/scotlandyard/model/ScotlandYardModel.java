@@ -213,15 +213,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				player.removeTicket(Ticket.DOUBLE);
 				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove));
 
-				this.incrementRound();
 
 				player.removeTicket(move.firstMove().ticket());
+				this.incrementRound();
 				player.location(move.firstMove().destination());
 				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove.firstMove()));
 
-				this.incrementRound();
-
 				player.removeTicket(move.secondMove().ticket());
+				this.incrementRound();
 				player.location(move.secondMove().destination());
 
 				ScotlandYardModel.this.populateWinningPlayers();
