@@ -188,8 +188,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				if (player.isMrX()) {
 					if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound)) ScotlandYardModel.this.lastKnownMrXLocation = player.location();
 					Move concealedMove = new TicketMove(move.colour(), move.ticket(), ScotlandYardModel.this.lastKnownMrXLocation);
-					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove));
 					this.incrementRound();
+					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove));
 				} else {
 					ScotlandYardModel.this.mrX.addTicket(move.ticket());
 					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move));
