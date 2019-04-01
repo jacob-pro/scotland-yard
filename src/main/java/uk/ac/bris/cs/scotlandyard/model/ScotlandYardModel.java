@@ -17,7 +17,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	private Graph<Integer, Transport> graph;
 	private ScotlandYardPlayer mrX;				//Reference to MrX
 	private Set<ScotlandYardPlayer> detectives;	//Unordered references of the detectives
-	private List<ScotlandYardPlayer> players;
+	private ListCycler<ScotlandYardPlayer> players;
 	private Set<ScotlandYardPlayer> winningPlayers = new HashSet<>();
 	private int currentRound = NOT_STARTED;
 	private int lastKnownMrXLocation = 0;		//Hidden location is apparently 0
@@ -81,9 +81,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			}
 		});
 
-		this.players = playerConfigurations.stream().map(c -> new ScotlandYardPlayer(c.player, c.colour, c.location, c.tickets)).collect(Collectors.toList());
-		this.mrX = this.players.get(0);
-		this.detectives = new HashSet<>(this.players.subList(1, this.players.size()));
+		List<ScotlandYardPlayer> players = playerConfigurations.stream().map(c -> new ScotlandYardPlayer(c.player, c.colour, c.location, c.tickets)).collect(Collectors.toList());
+		this.mrX = players.get(0);
+		this.detectives = new HashSet<>(players.subList(1, players.size()));
+		this.players = new ListCycler<>(players);
 	}
 
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
@@ -118,7 +119,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		edgesAtLocation.forEach(edge -> {
 			int destination = edge.destination().value();
-			boolean destinationBlocked = this.players.stream().anyMatch(p -> p.location() == destination && p.isDetective());
+			boolean destinationBlocked = this.players.list().stream().anyMatch(p -> p.location() == destination && p.isDetective());
 
 			if (!destinationBlocked) {
 
@@ -166,7 +167,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		if (!validMoves.contains(move)) throw new IllegalArgumentException("Invalid move");
 
 		//Rotate the players
-		Collections.rotate(this.players, -1);
+		this.players.next();
 
 		//This is an anonymous class that implements the MoveVisitor interface
 		move.visit(new MoveVisitor() {
@@ -188,8 +189,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				if (player.isMrX()) {
 					if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound)) ScotlandYardModel.this.lastKnownMrXLocation = player.location();
 					Move concealedMove = new TicketMove(move.colour(), move.ticket(), ScotlandYardModel.this.lastKnownMrXLocation);
-					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove));
 					this.incrementRound();
+					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove));
 				} else {
 					ScotlandYardModel.this.mrX.addTicket(move.ticket());
 					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move));
@@ -243,7 +244,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	//A functional interface can be passed as as a lambda expression that matches the signature of its single method
 
 	private void startNextMove() {
-		ScotlandYardPlayer currentPlayer = this.players.get(0);
+		ScotlandYardPlayer currentPlayer = this.players.current();
 		Set<Move> validMoves = this.validMovesForPlayer(currentPlayer);
 		currentPlayer.player().makeMove(this, currentPlayer.location(), validMoves, move -> this.makeMove(currentPlayer, validMoves, move));
 	}
@@ -261,7 +262,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public List<Colour> getPlayers() {
-		return this.players.stream().map(ScotlandYardPlayer::colour).collect(Collectors.toUnmodifiableList());
+		return this.players.list().stream().map(ScotlandYardPlayer::colour).collect(Collectors.toUnmodifiableList());
 	}
 
 	@Override
@@ -271,13 +272,13 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public Optional<Integer> getPlayerLocation(Colour colour) {
-		Optional<ScotlandYardPlayer> cfg = this.players.stream().filter(c -> c.colour() == colour).findFirst();
+		Optional<ScotlandYardPlayer> cfg = this.players.list().stream().filter(c -> c.colour() == colour).findFirst();
 		return cfg.map(p -> p.isMrX() ? this.lastKnownMrXLocation : p.location());
 	}
 
 	@Override
 	public Optional<Integer> getPlayerTickets(Colour colour, Ticket ticket) {
-		Optional<ScotlandYardPlayer> cfg = this.players.stream().filter(c -> c.colour() == colour).findFirst();
+		Optional<ScotlandYardPlayer> cfg = this.players.list().stream().filter(c -> c.colour() == colour).findFirst();
 		Optional<Map<Ticket, Integer>> tickets = cfg.map(ScotlandYardPlayer::tickets);
 		return tickets.map(t -> t.get(ticket));
 	}
@@ -289,7 +290,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public Colour getCurrentPlayer() {
-		return this.players.get(0).colour();
+		return this.players.current().colour();
 	}
 
 	@Override
@@ -308,3 +309,4 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	}
 
 }
+
