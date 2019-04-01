@@ -162,7 +162,11 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	private void makeMove(ScotlandYardPlayer player, Set<Move> validMoves, Move move) {
 		Objects.requireNonNull(move, "Move must not be null");
+
 		if (!validMoves.contains(move)) throw new IllegalArgumentException("Invalid move");
+
+		//Rotate the players
+		Collections.rotate(this.players, -1);
 
 		//This is an anonymous class that implements the MoveVisitor interface
 		move.visit(new MoveVisitor() {
@@ -220,8 +224,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			}
 		});
 
-		//Rotate the players
-		Collections.rotate(this.players, 1);
 
 		this.populateWinningPlayers();
 
