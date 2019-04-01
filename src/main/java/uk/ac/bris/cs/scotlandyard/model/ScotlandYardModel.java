@@ -164,12 +164,13 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		Objects.requireNonNull(move, "Move must not be null");
 		if (!validMoves.contains(move)) throw new IllegalArgumentException("Invalid move");
 
-		if (player.isMrX()) {
-			this.spectators.forEach(s -> s.onRoundStarted(this, this.currentRound));
-		}
-
 		//This is an anonymous class that implements the MoveVisitor interface
 		move.visit(new MoveVisitor() {
+
+			private void incrementRound() {
+				ScotlandYardModel.this.currentRound++;
+				ScotlandYardModel.this.spectators.forEach(s -> s.onRoundStarted(ScotlandYardModel.this, ScotlandYardModel.this.currentRound));
+			}
 
 			@Override
 			public void visit(PassMove move) {
@@ -184,7 +185,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound)) ScotlandYardModel.this.lastKnownMrXLocation = player.location();
 					Move concealedMove = new TicketMove(move.colour(), move.ticket(), ScotlandYardModel.this.lastKnownMrXLocation);
 					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove));
-					ScotlandYardModel.this.currentRound++;
+					this.incrementRound();
 				} else {
 					ScotlandYardModel.this.mrX.addTicket(move.ticket());
 					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move));
@@ -205,19 +206,17 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				player.removeTicket(Ticket.DOUBLE);
 				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove));
 
+				this.incrementRound();
+
 				player.removeTicket(move.firstMove().ticket());
 				player.location(move.firstMove().destination());
 				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove.firstMove()));
-				ScotlandYardModel.this.currentRound++;
 
-				//A double move starts a new round
-				ScotlandYardModel.this.spectators.forEach(s -> s.onRoundStarted(ScotlandYardModel.this, ScotlandYardModel.this.currentRound));
+				this.incrementRound();
 
 				player.removeTicket(move.secondMove().ticket());
 				player.location(move.secondMove().destination());
 				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove.secondMove()));
-				ScotlandYardModel.this.currentRound++;
-
 			}
 		});
 
