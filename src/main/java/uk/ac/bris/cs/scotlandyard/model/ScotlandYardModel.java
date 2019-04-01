@@ -44,7 +44,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			this.winningPlayers.addAll(this.detectives);
 		} else if (mrXisNext && this.validMovesForPlayer(this.mrX).isEmpty()) {
 			this.winningPlayers.addAll(this.detectives);
-		} else if (this.remainingRounds() == 0) {
+		} else if ((this.remainingRounds() == 0) && (mrXisNext)) {
 			this.winningPlayers.add(this.mrX);
 		} else if (this.detectives.stream().flatMap(p -> this.validMovesForPlayer(p).stream()).allMatch(m -> m instanceof PassMove)) {
 			this.winningPlayers.add(this.mrX);
