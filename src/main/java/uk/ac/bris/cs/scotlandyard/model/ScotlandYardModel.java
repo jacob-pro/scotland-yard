@@ -179,6 +179,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 			@Override
 			public void visit(PassMove move) {
+				ScotlandYardModel.this.populateWinningPlayers();
 				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move));
 			}
 
@@ -188,13 +189,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				player.location(move.destination());
 				if (player.isMrX()) {
 					if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound)) ScotlandYardModel.this.lastKnownMrXLocation = player.location();
-					Move concealedMove = new TicketMove(move.colour(), move.ticket(), ScotlandYardModel.this.lastKnownMrXLocation);
+					move = new TicketMove(move.colour(), move.ticket(), ScotlandYardModel.this.lastKnownMrXLocation);
 					this.incrementRound();
-					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove));
 				} else {
 					ScotlandYardModel.this.mrX.addTicket(move.ticket());
-					ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, move));
 				}
+				final Move lambdaMove = move;		//Unfortunately we cannot capture mutated variables
+				ScotlandYardModel.this.populateWinningPlayers();		//We must update isGameOver before notifying moveMade
+				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, lambdaMove));
 			}
 
 			//Note that a DoubleMove implies this is MrX
@@ -221,12 +223,11 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 				player.removeTicket(move.secondMove().ticket());
 				player.location(move.secondMove().destination());
+
+				ScotlandYardModel.this.populateWinningPlayers();
 				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove.secondMove()));
 			}
 		});
-
-
-		this.populateWinningPlayers();
 
 		if (!this.winningPlayers.isEmpty()) {
 			this.spectators.forEach(s -> s.onGameOver(this, this.getWinningPlayers()));
