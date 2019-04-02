@@ -104,9 +104,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	public void unregisterSpectator(Spectator spectator) {
 		Objects.requireNonNull(spectator, "Spectator must not be null");
-		if (!this.spectators.remove(spectator)) {
-			throw new IllegalArgumentException("Can't unregister a spectator that has never been registered before");
-		}
+		if (!this.spectators.remove(spectator)) throw new IllegalArgumentException("Can't unregister a spectator that has never been registered before");
 	}
 
 	private Set<TicketMove> generateTicketMovesForPlayerFromLocation(ScotlandYardPlayer player, Integer location) {
