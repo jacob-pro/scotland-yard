@@ -163,11 +163,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	private void makeMove(ScotlandYardPlayer player, Set<Move> validMoves, Move move) {
 		Objects.requireNonNull(move, "Move must not be null");
-
 		if (!validMoves.contains(move)) throw new IllegalArgumentException("Invalid move");
 
-		//Rotate the players
-		this.players.next();
+		this.players.next();	//Cycle the players
 
 		//This is an anonymous class that implements the MoveVisitor interface
 		move.visit(new MoveVisitor() {
@@ -200,37 +198,38 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			}
 
 			//Note that a DoubleMove implies this is MrX
-			//We must notify the spectators first with the double move, and then again with the first and second moves
 			@Override
 			public void visit(DoubleMove move) {
 
-				if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound)) ScotlandYardModel.this.lastKnownMrXLocation = move.firstMove().destination();
-				int firstMoveConcealed = ScotlandYardModel.this.lastKnownMrXLocation;
-				if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound + 1)) ScotlandYardModel.this.lastKnownMrXLocation = move.secondMove().destination();
-				int secondMoveConcealed = ScotlandYardModel.this.lastKnownMrXLocation;
+				//Notify spectators of the DoubleMove
+				//We need to compute the visible position of MrX for the double move notification
+				//However we mustn't apply it to lastKnownMrXLocation until each individual move takes place because otherwise getPlayerLocation would be inconsistent
+				int firstMoveConcealed = (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound)) ? move.firstMove().destination() : ScotlandYardModel.this.lastKnownMrXLocation;
+				int secondMoveConcealed = (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound + 1)) ? move.secondMove().destination() : firstMoveConcealed;
 				DoubleMove concealedMove = new DoubleMove(move.colour(), move.firstMove().ticket(), firstMoveConcealed, move.secondMove().ticket(), secondMoveConcealed);
-
 				player.removeTicket(Ticket.DOUBLE);
 				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove));
 
-
+				//Notify spectators of the FirstMove
 				player.removeTicket(move.firstMove().ticket());
-				this.incrementRound();
 				player.location(move.firstMove().destination());
+				ScotlandYardModel.this.lastKnownMrXLocation = firstMoveConcealed;
+				this.incrementRound();
 				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove.firstMove()));
 
+				//Notify spectators of the SecondMove
 				player.removeTicket(move.secondMove().ticket());
-				this.incrementRound();
 				player.location(move.secondMove().destination());
-
-				ScotlandYardModel.this.populateWinningPlayers();
+				ScotlandYardModel.this.lastKnownMrXLocation = secondMoveConcealed;
+				this.incrementRound();
+				ScotlandYardModel.this.populateWinningPlayers();	//We must update isGameOver before notifying the final moveMade
 				ScotlandYardModel.this.spectators.forEach(s -> s.onMoveMade(ScotlandYardModel.this, concealedMove.secondMove()));
 			}
 		});
 
 		if (!this.winningPlayers.isEmpty()) {
 			this.spectators.forEach(s -> s.onGameOver(this, this.getWinningPlayers()));
-		} else if (this.getCurrentPlayer().isMrX()) {				//If the next player is now MrX then a rotation must have been completed
+		} else if (this.getCurrentPlayer().isMrX()) {				//If the next player is now MrX then we know a rotation must have been completed
 			this.spectators.forEach(s -> s.onRotationComplete(this));
 		} else {
 			this.startNextMove();
@@ -238,11 +237,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	}
 
 	//An explanation of the Consumer callback
-	//We could create an inner class that implements the accept method
+	//We could create a class that implements the accept method of the Consumer interface
 	//The accept method is a method with 1 parameter matching the generic type of the consumer
 	//A Consumer is a functional interface, meaning that it only has one abstract (non default) method
-	//A functional interface can be passed as as a lambda expression that matches the signature of its single method
-
+	//A functional interface can therefore be passed as as a lambda expression that matches the signature of its single method
 	private void startNextMove() {
 		ScotlandYardPlayer currentPlayer = this.players.current();
 		Set<Move> validMoves = this.validMovesForPlayer(currentPlayer);
@@ -309,4 +307,3 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	}
 
 }
-
