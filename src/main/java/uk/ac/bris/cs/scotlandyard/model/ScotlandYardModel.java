@@ -203,11 +203,20 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			//We must notify the spectators first with the double move, and then again with the first and second moves
 			@Override
 			public void visit(DoubleMove move) {
-
-				if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound)) ScotlandYardModel.this.lastKnownMrXLocation = move.firstMove().destination();
 				int firstMoveConcealed = ScotlandYardModel.this.lastKnownMrXLocation;
-				if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound + 1)) ScotlandYardModel.this.lastKnownMrXLocation = move.secondMove().destination();
 				int secondMoveConcealed = ScotlandYardModel.this.lastKnownMrXLocation;
+
+				if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound)) {
+					ScotlandYardModel.this.lastKnownMrXLocation = move.firstMove().destination();
+					firstMoveConcealed = ScotlandYardModel.this.lastKnownMrXLocation;
+					secondMoveConcealed = ScotlandYardModel.this.lastKnownMrXLocation;
+				}
+
+				if (ScotlandYardModel.this.rounds.get(ScotlandYardModel.this.currentRound + 1)) {
+					ScotlandYardModel.this.lastKnownMrXLocation = move.secondMove().destination();
+					secondMoveConcealed = ScotlandYardModel.this.lastKnownMrXLocation;
+				}
+
 				DoubleMove concealedMove = new DoubleMove(move.colour(), move.firstMove().ticket(), firstMoveConcealed, move.secondMove().ticket(), secondMoveConcealed);
 
 				player.removeTicket(Ticket.DOUBLE);
