@@ -9,7 +9,6 @@ import uk.ac.bris.cs.gamekit.graph.Graph;
 import uk.ac.bris.cs.gamekit.graph.Node;
 import uk.ac.bris.cs.gamekit.graph.ImmutableGraph;
 
-// TODO implement all methods and pass all tests
 public class ScotlandYardModel implements ScotlandYardGame {
 
 	private Collection<Spectator> spectators = new HashSet<>();
@@ -22,16 +21,12 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	private int currentRound = NOT_STARTED;
 	private int lastKnownMrXLocation = 0;		//Hidden location is apparently 0
 
-	private void validateTicketsMap(Map<Ticket, Integer> map) {
-		for (Ticket ticket: Ticket.values()) {
-			if (!map.containsKey(ticket)) {
-				throw new IllegalArgumentException("Tickets map must be populated with values for all tickets");
-			}
-		}
-	}
-
 	private boolean listContainsDuplicates(List list) {
 		return list.size() != list.stream().distinct().count();
+	}
+
+	private int remainingRounds() {
+		return rounds.size() - this.currentRound;
 	}
 
 	private void populateWinningPlayers() {
@@ -73,7 +68,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		playerConfigurations.forEach(cfg -> {
 			// Check player ticket maps
-			this.validateTicketsMap(cfg.tickets);
+			for (Ticket ticket: Ticket.values()) {
+				if (!cfg.tickets.containsKey(ticket)) throw new IllegalArgumentException("Tickets map must be populated with values for all tickets");
+			}
 			// Check detective double tickets
 			if (cfg.colour.isDetective()) {
 				if (cfg.tickets.get(Ticket.SECRET) > 0) throw new IllegalArgumentException("Detectives must not have secret tickets");
@@ -134,10 +131,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		});
 
 		return ticketMoves;
-	}
-
-	private int remainingRounds() {
-		return rounds.size() - this.currentRound;
 	}
 
 	private Set<Move> validMovesForPlayer(ScotlandYardPlayer player) {
@@ -232,7 +225,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		} else if (this.getCurrentPlayer().isMrX()) {				//If the next player is now MrX then we know a rotation must have been completed
 			this.spectators.forEach(s -> s.onRotationComplete(this));
 		} else {
-			this.startNextMove();
+			this.startRotate();
 		}
 	}
 
@@ -241,17 +234,12 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	//The accept method is a method with 1 parameter matching the generic type of the consumer
 	//A Consumer is a functional interface, meaning that it only has one abstract (non default) method
 	//A functional interface can therefore be passed as as a lambda expression that matches the signature of its single method
-	private void startNextMove() {
-		ScotlandYardPlayer currentPlayer = this.players.current();
-		Set<Move> validMoves = this.validMovesForPlayer(currentPlayer);
-		currentPlayer.player().makeMove(this, currentPlayer.location(), validMoves, move -> this.makeMove(currentPlayer, validMoves, move));
-	}
-
 	@Override
 	public void startRotate() {
 		if (!this.winningPlayers.isEmpty()) throw new IllegalStateException("The game is over");
-		this.startNextMove();
-	}
+		ScotlandYardPlayer currentPlayer = this.players.current();
+		Set<Move> validMoves = this.validMovesForPlayer(currentPlayer);
+		currentPlayer.player().makeMove(this, currentPlayer.location(), validMoves, move -> this.makeMove(currentPlayer, validMoves, move));	}
 
 	@Override
 	public Collection<Spectator> getSpectators() {
