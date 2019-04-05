@@ -1,6 +1,7 @@
 package uk.ac.bris.cs.scotlandyard.ui.controller;
 
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.event.ActionEvent;
@@ -13,7 +14,7 @@ import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 
 import java.util.function.Consumer;
 
-@BindFXML(value = "layout/MLGStartScreen.fxml", css = "style/startscreen.css")
+@BindFXML(value = "layout/MLGStartScreen.fxml", css = "style/mlg.css")
 public final class MLGStartScreen implements Controller {
 
 	@FXML private StackPane stackPane;
@@ -27,15 +28,16 @@ public final class MLGStartScreen implements Controller {
 
 	MLGStartScreen(ResourceManager manager, BoardProperty config, Consumer<ModelProperty> consumer) {
 		Controller.bind(this);
-
-		//GameSetup setupController = new GameSetup(this.manager, this.config, ModelProperty.createDefault(manager), ais, EnumSet.allOf(Features.class));
-
 		this.joinButton.setOnAction(this::joinButtonAction);
 		this.hostButton.setOnAction(this::hostButtonAction);
 	}
 
+	void popNode(Node node) {
+		this.stackPane.getChildren().remove(node);
+	}
+
 	private void joinButtonAction(ActionEvent event) {
-		MLGJoinGame join = new MLGJoinGame();
+		MLGJoinGame join = new MLGJoinGame(this);
 		this.stackPane.getChildren().add(join.root());
 	}
 
