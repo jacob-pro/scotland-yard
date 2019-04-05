@@ -1,7 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.controller;
 
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.event.ActionEvent;
@@ -26,7 +25,10 @@ public final class MLGStartScreen implements Controller {
 		return this.stackPane;
 	}
 
+	ResourceManager resourceManager;
+
 	MLGStartScreen(ResourceManager manager, BoardProperty config, Consumer<ModelProperty> consumer) {
+		this.resourceManager = manager;
 		Controller.bind(this);
 		this.joinButton.setOnAction(this::joinButtonAction);
 		this.hostButton.setOnAction(this::hostButtonAction);

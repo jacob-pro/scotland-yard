@@ -78,7 +78,7 @@ public final class FindNode implements Controller {
 								.collect(toList())));
 //				gesturePane.translateTo(
 //						findCentre(highlights.stream()
-//								.map(manager::coordinateAtNode)
+//								.map(resourceManager::coordinateAtNode)
 //								.collect(toList())),
 //						Duration.millis(300), () -> {});
 			}
