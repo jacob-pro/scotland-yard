@@ -4,17 +4,15 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 
-@BindFXML(value = "layout/MLGJoinGame.fxml", css = "style/mlg.css")
-public final class MLGJoinGame implements Controller {
+@BindFXML(value = "layout/MLGHostGame.fxml", css = "style/mlg.css")
+public final class MLGHostGame implements Controller {
 
 	@FXML private StackPane root;
-	@FXML private TextField addressField;
-	@FXML private Button joinButton;
+	@FXML private Button hostButton;
 	@FXML private Button cancelButton;
 
 	@Override
@@ -24,14 +22,14 @@ public final class MLGJoinGame implements Controller {
 
 	private MLGStartScreen startScreen;
 
-	MLGJoinGame(MLGStartScreen startScreen) {
+	MLGHostGame(MLGStartScreen startScreen) {
 		this.startScreen = startScreen;
 		Controller.bind(this);
-		this.joinButton.setOnAction(this::joinButtonAction);
+		this.hostButton.setOnAction(this::hostButtonAction);
 		this.cancelButton.setOnAction(this::cancelButtonAction);
 	}
 
-	private void joinButtonAction(ActionEvent event) {
+	private void hostButtonAction(ActionEvent event) {
 
 	}
 

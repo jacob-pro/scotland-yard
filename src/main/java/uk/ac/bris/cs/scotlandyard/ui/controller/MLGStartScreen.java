@@ -32,17 +32,22 @@ public final class MLGStartScreen implements Controller {
 		this.hostButton.setOnAction(this::hostButtonAction);
 	}
 
-	void popNode(Node node) {
-		this.stackPane.getChildren().remove(node);
+	void popController(Controller controller) {
+		this.stackPane.getChildren().remove(controller.root());
+	}
+
+	void pushController(Controller controller) {
+		this.stackPane.getChildren().add(controller.root());
 	}
 
 	private void joinButtonAction(ActionEvent event) {
 		MLGJoinGame join = new MLGJoinGame(this);
-		this.stackPane.getChildren().add(join.root());
+		this.pushController(join);
 	}
 
 	private void hostButtonAction(ActionEvent event) {
-
+		MLGHostGame host = new MLGHostGame(this);
+		this.pushController(host);
 	}
 
 }
