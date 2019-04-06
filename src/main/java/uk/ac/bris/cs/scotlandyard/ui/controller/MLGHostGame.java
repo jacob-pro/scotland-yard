@@ -5,17 +5,15 @@ import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
-import javafx.util.StringConverter;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
-import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
-import uk.ac.bris.cs.scotlandyard.ui.model.PlayerProperty;
+import uk.ac.bris.cs.scotlandyard.model.Colour;
 
 @BindFXML(value = "layout/MLGHostGame.fxml", css = "style/mlg.css")
 public final class MLGHostGame implements Controller {
 
 	@FXML private StackPane root;
-	@FXML private ChoiceBox<PlayerProperty> colourChoiceBox;
+	@FXML private ChoiceBox<Colour> colourChoiceBox;
 	@FXML private CheckBox turnTimerCheckBox;
 	@FXML private TextField turnTimerField;
 	@FXML private Slider maxPlayersSlider;
@@ -39,23 +37,13 @@ public final class MLGHostGame implements Controller {
 		});
 		this.hostButton.setOnAction(this::hostButtonAction);
 		this.cancelButton.setOnAction(this::cancelButtonAction);
-
-		ModelProperty cfg = ModelProperty.createDefault(this.startScreen.resourceManager);
-		this.colourChoiceBox.setConverter(new StringConverter<PlayerProperty>() {
-			@Override
-			public String toString(PlayerProperty playerProperty) {
-				return playerProperty.colour().toString();
-			}
-			@Override
-			public PlayerProperty fromString(String s) {
-				return null;
-			}
-		});
-		this.colourChoiceBox.setItems(cfg.allPlayers());
+		this.colourChoiceBox.getItems().setAll(Colour.values());
 
 	}
 
 	private void hostButtonAction(ActionEvent event) {
+
+
 
 	}
 
