@@ -56,12 +56,11 @@ public final class MLGHostGame implements Controller {
 		int port = Integer.parseInt(this.portField.getText());
 		int maxPlayers = (int) this.maxPlayersSlider.getValue();
 		int turnTimer = this.turnTimerCheckBox.isSelected() ? Integer.parseInt(this.turnTimerField.getText()): 0;
-
 		String localhost = "localhost";
 		InetSocketAddress address = new InetSocketAddress(localhost, port);
-		MLGServer server = new MLGServer(address, maxPlayers, turnTimer, this.serverName.getText());
 
 		try {
+			MLGServer server = MLGServer.CreateMLGServer(address, maxPlayers, turnTimer, this.serverName.getText()).get();
 			MLGConnection connection = MLGConnection.CreateMLGConnection(localhost, port).get();
 			MLGProperty config = new MLGProperty(connection, server);
 			MLGLobby lobby = new MLGLobby(this.startScreen, config);

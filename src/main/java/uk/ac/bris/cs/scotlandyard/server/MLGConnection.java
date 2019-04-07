@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 public class MLGConnection extends WebSocketClient {
 

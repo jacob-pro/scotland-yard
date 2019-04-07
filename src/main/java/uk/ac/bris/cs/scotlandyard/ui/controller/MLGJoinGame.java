@@ -1,5 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.controller;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
@@ -53,15 +54,17 @@ public final class MLGJoinGame implements Controller {
 		}
 
 		this.progress.setVisible(true);
-		MLGConnection.CreateMLGConnection(host, port).whenCompleteAsync((result, exception) -> {
-			this.progress.setVisible(false);
-			if (result != null) {
-				MLGProperty config = new MLGProperty(result, null);
-				MLGLobby lobby = new MLGLobby(this.startScreen, config);
-				this.startScreen.pushController(lobby);
-			} else {
-				exception.printStackTrace();
-			}
+		MLGConnection.CreateMLGConnection(host, port).whenComplete((result, exception) -> {
+			Platform.runLater(() -> {
+				this.progress.setVisible(false);
+				if (result != null) {
+					MLGProperty config = new MLGProperty(result, null);
+					MLGLobby lobby = new MLGLobby(this.startScreen, config);
+					this.startScreen.pushController(lobby);
+				} else {
+					exception.printStackTrace();
+				}
+			});
 		});
 	}
 
