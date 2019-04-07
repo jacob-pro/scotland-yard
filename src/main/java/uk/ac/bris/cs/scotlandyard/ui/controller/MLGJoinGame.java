@@ -13,10 +13,6 @@ import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.server.MLGConnection;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
 
-import java.net.URISyntaxException;
-import java.util.concurrent.ExecutionException;
-
-
 @BindFXML(value = "layout/MLGJoinGame.fxml", css = "style/mlg.css")
 public final class MLGJoinGame implements Controller {
 
@@ -71,7 +67,5 @@ public final class MLGJoinGame implements Controller {
 	private void cancelButtonAction(ActionEvent event) {
 		this.startScreen.popController(this);
 	}
-
-
 
 }

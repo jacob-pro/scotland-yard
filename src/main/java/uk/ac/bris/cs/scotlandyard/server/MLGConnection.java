@@ -1,13 +1,15 @@
 package uk.ac.bris.cs.scotlandyard.server;
 
+import javafx.application.Platform;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public class MLGConnection extends WebSocketClient {
 
@@ -24,7 +26,7 @@ public class MLGConnection extends WebSocketClient {
 		}
 	}
 
-	private Set<MLGObserver> observers = Collections.newSetFromMap(new WeakHashMap<>());
+	private Set<MLGObserver> observers = new HashSet<>();
 	private CompletableFuture<MLGConnection> connectFuture = new CompletableFuture<>();
 
 	private MLGConnection(URI uri) {
@@ -32,28 +34,31 @@ public class MLGConnection extends WebSocketClient {
 	}
 
 	@Override
-	public void onOpen( ServerHandshake handshakedata ) {
+	public void onOpen(ServerHandshake handshake) {
 		this.connectFuture.complete(this);
 	}
 
 	@Override
-	public void onMessage( String message ) {
+	public void onMessage(String message) {
 		System.out.println( "received: " + message );
 	}
 
 	@Override
-	public void onClose( int code, String reason, boolean remote ) {
-
-		// The codecodes are documented in class org.java_websocket.framing.CloseFrame
-		System.out.println( "Connection closed by " + ( remote ? "remote peer" : "us" ) + " Code: " + code + " Reason: " + reason );
+	public void onClose(int code, String reason, boolean remote) {
 	}
 
 	@Override
-	public void onError( Exception ex ) {
+	public void onError(Exception ex) {
+		// if the error is fatal then onClose will be called additionally
 		if(!this.connectFuture.isDone()) {
 			this.connectFuture.completeExceptionally(ex);
 		}
-		// if the error is fatal then onClose will be called additionally
+	}
+
+	private void tellObservers(Consumer<MLGObserver> tell) {
+		Platform.runLater(() -> {
+			this.observers.forEach(tell);
+		});
 	}
 
 	public void registerObserver(MLGObserver observer) {
