@@ -13,6 +13,8 @@
    <children>
       <VBox alignment="CENTER" styleClass="mlg-config-vbox">
          <children>
+            <Label layoutX="53.0" layoutY="35.0" text="Server Name" />
+            <TextField fx:id="serverName" alignment="CENTER" layoutX="10.0" layoutY="69.0" text="MLG ScotlandYard Server" />
             <Label layoutX="56.0" layoutY="80.0" text="Your Colour" />
             <ChoiceBox fx:id="colourChoiceBox" maxWidth="1.7976931348623157E308" prefWidth="150.0" />
             <CheckBox fx:id="turnTimerCheckBox" mnemonicParsing="false" text="Enable Turn Timer" />
@@ -20,7 +22,7 @@
             <Label layoutX="54.0" layoutY="26.0" text="Max Players" />
             <Slider fx:id="maxPlayersSlider" majorTickUnit="1.0" max="6.0" min="3.0" minorTickCount="1" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="6.0" />
             <Label text="Port Number" />
-            <TextField fx:id="portField" alignment="CENTER" text="25566" />
+            <TextField fx:id="portField" alignment="CENTER" />
             <Button fx:id="hostButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Host" />
             <Button fx:id="cancelButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Cancel" />
          </children>

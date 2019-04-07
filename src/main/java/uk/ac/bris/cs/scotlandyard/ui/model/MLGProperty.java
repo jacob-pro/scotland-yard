@@ -1,19 +1,19 @@
 package uk.ac.bris.cs.scotlandyard.ui.model;
 
-import uk.ac.bris.cs.scotlandyard.server.MLGClient;
+import uk.ac.bris.cs.scotlandyard.server.MLGConnection;
 import uk.ac.bris.cs.scotlandyard.server.MLGServer;
 
 public class MLGProperty {
 
-	private MLGClient client;
+	private MLGConnection client;
 	private MLGServer server;
 
-	public MLGProperty(MLGClient client, MLGServer server) {
+	public MLGProperty(MLGConnection client, MLGServer server) {
 		this.client = client;
 		this.server = server;
 	}
 
-	public MLGClient client(){
+	public MLGConnection client(){
 		return this.client;
 	}
 

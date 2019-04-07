@@ -1,14 +1,11 @@
 package uk.ac.bris.cs.scotlandyard.ui.controller;
 
 import javafx.scene.Scene;
-import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
 import uk.ac.bris.cs.scotlandyard.model.Spectator;
-import uk.ac.bris.cs.scotlandyard.server.MLGClient;
 import uk.ac.bris.cs.scotlandyard.ui.model.BoardProperty;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
-import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 
 import java.net.URL;
 import java.util.ResourceBundle;

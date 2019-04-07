@@ -8,10 +8,8 @@ import javafx.scene.layout.StackPane;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
-import uk.ac.bris.cs.scotlandyard.server.MLGClient;
 import uk.ac.bris.cs.scotlandyard.ui.model.BoardProperty;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
-import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 
 import java.util.function.Consumer;
 

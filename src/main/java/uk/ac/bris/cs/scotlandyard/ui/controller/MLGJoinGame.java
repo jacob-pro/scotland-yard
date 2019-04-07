@@ -6,12 +6,14 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
-import uk.ac.bris.cs.scotlandyard.server.MLGClient;
+import uk.ac.bris.cs.scotlandyard.server.MLGConnection;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
 
-import java.net.InetSocketAddress;
+import java.net.URISyntaxException;
+import java.util.concurrent.ExecutionException;
 
 
 @BindFXML(value = "layout/MLGJoinGame.fxml", css = "style/mlg.css")
@@ -21,6 +23,7 @@ public final class MLGJoinGame implements Controller {
 	@FXML private TextField addressField;
 	@FXML private Button joinButton;
 	@FXML private Button cancelButton;
+	@FXML private VBox progress;
 
 	@Override
 	public Parent root() {
@@ -36,7 +39,9 @@ public final class MLGJoinGame implements Controller {
 		this.cancelButton.setOnAction(this::cancelButtonAction);
 	}
 
-	private InetSocketAddress stringToSocket(String text) {
+	private void joinButtonAction(ActionEvent event) {
+
+		String text = this.addressField.getText();
 		int port;
 		String host;
 		if (text.contains(":")) {
@@ -46,18 +51,18 @@ public final class MLGJoinGame implements Controller {
 			host = text;
 			port = MLGHostGame.defaultPort;
 		}
-		return new InetSocketAddress(host, port);
-	}
 
-	private void joinButtonAction(ActionEvent event) {
-
-		InetSocketAddress socket = this.stringToSocket(this.addressField.getText());
-		MLGClient client = new MLGClient(socket);
-		client.connect();
-
-		MLGProperty config = new MLGProperty(client, null);
-		MLGLobby lobby = new MLGLobby(this.startScreen, config);
-		this.startScreen.pushController(lobby);
+		this.progress.setVisible(true);
+		MLGConnection.CreateMLGConnection(host, port).whenCompleteAsync((result, exception) -> {
+			this.progress.setVisible(false);
+			if (result != null) {
+				MLGProperty config = new MLGProperty(result, null);
+				MLGLobby lobby = new MLGLobby(this.startScreen, config);
+				this.startScreen.pushController(lobby);
+			} else {
+				exception.printStackTrace();
+			}
+		});
 	}
 
 	private void cancelButtonAction(ActionEvent event) {

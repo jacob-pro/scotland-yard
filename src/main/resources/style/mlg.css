@@ -11,6 +11,10 @@
     -fx-background-color: #2a2a2a;
 }
 
+.mlg-progress-box {
+    -fx-background-color: rgba(42,42,42,0.7);
+}
+
 .mlg-config-vbox {
     -fx-spacing: 12;
     -fx-max-width: 300;
