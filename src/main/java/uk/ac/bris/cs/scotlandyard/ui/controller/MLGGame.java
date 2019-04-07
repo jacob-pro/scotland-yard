@@ -7,6 +7,7 @@ import uk.ac.bris.cs.scotlandyard.ResourceManager;
 import uk.ac.bris.cs.scotlandyard.model.Spectator;
 import uk.ac.bris.cs.scotlandyard.server.MLGClient;
 import uk.ac.bris.cs.scotlandyard.ui.model.BoardProperty;
+import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
 import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 
 import java.net.URL;
@@ -39,11 +40,11 @@ public class MLGGame extends BaseGame implements Spectator {
 //		});
 //		addMenuItem(showTests);
 
-		MLGStartScreen startScreen = new MLGStartScreen(resourceManager, config, this::createGame);
+		MLGStartScreen startScreen = new MLGStartScreen(resourceManager, this.config, this::startGame);
 		showOverlay(startScreen.root());
 	}
 
-	private void createGame(MLGClient client) {
+	private void startGame(MLGProperty config) {
 		hideOverlay();
 		try {
 			throw new RuntimeException();

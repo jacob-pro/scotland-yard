@@ -9,11 +9,14 @@ import java.net.InetSocketAddress;
 public class MLGServer {
 
 	private MLGWebSocketServer webSocketServer;
-	private ScotlandYardGame model;
+	private ScotlandYardGame model = null;
 
-	MLGServer(int port, int maxPlayers) {
-		InetSocketAddress address = new InetSocketAddress("localhost", port);
+	public MLGServer(InetSocketAddress address, int maxPlayers, int turnTimer, String name) {
 		this.webSocketServer = new MLGWebSocketServer(address);
+	}
+
+	private void createModel() {
+
 	}
 
 	class MLGWebSocketServer extends WebSocketServer {
@@ -24,7 +27,10 @@ public class MLGServer {
 
 		@Override
 		public void onOpen(WebSocket conn, ClientHandshake handshake) {
-			conn.send("Welcome to the server!"); //This method sends a message to the new client
+			if (MLGServer.this.model != null) {
+				conn.send("Game already started"); //This method sends a message to the new client
+				conn.close();
+			}
 			broadcast( "new connection: " + handshake.getResourceDescriptor() ); //This method sends a message to all clients connected
 			System.out.println("new connection to " + conn.getRemoteSocketAddress());
 		}

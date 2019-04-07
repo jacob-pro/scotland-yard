@@ -10,6 +10,7 @@ import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
 import uk.ac.bris.cs.scotlandyard.server.MLGClient;
 import uk.ac.bris.cs.scotlandyard.ui.model.BoardProperty;
+import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
 import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 
 import java.util.function.Consumer;
@@ -26,7 +27,7 @@ public final class MLGStartScreen implements Controller {
 		return this.stackPane;
 	}
 
-	MLGStartScreen(ResourceManager manager, BoardProperty config, Consumer<MLGClient> callBack) {
+	MLGStartScreen(ResourceManager manager, BoardProperty config, Consumer<MLGProperty> callBack) {
 		Controller.bind(this);
 		this.joinButton.setOnAction(this::joinButtonAction);
 		this.hostButton.setOnAction(this::hostButtonAction);

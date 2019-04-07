@@ -8,12 +8,20 @@ import javafx.scene.layout.StackPane;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
+import uk.ac.bris.cs.scotlandyard.server.MLGClient;
+import uk.ac.bris.cs.scotlandyard.server.MLGServer;
+import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
+
+import java.net.InetSocketAddress;
 
 @BindFXML(value = "layout/MLGHostGame.fxml", css = "style/mlg.css")
 public final class MLGHostGame implements Controller {
 
+	static Integer defaultPort = 25566;
+
 	@FXML private StackPane root;
 	@FXML private ChoiceBox<Colour> colourChoiceBox;
+	@FXML private TextField serverName;
 	@FXML private CheckBox turnTimerCheckBox;
 	@FXML private TextField turnTimerField;
 	@FXML private Slider maxPlayersSlider;
@@ -31,6 +39,7 @@ public final class MLGHostGame implements Controller {
 	MLGHostGame(MLGStartScreen startScreen) {
 		this.startScreen = startScreen;
 		Controller.bind(this);
+		this.portField.setText(MLGHostGame.defaultPort.toString());
 		this.turnTimerCheckBox.setOnAction(a -> {
 			this.turnTimerField.setDisable(!this.turnTimerCheckBox.isSelected());
 			this.turnTimerField.setText(null);
@@ -42,9 +51,19 @@ public final class MLGHostGame implements Controller {
 	}
 
 	private void hostButtonAction(ActionEvent event) {
+		int port = Integer.parseInt(this.portField.toString());
+		int maxPlayers = (int) this.maxPlayersSlider.getValue();
+		int turnTimer = this.turnTimerCheckBox.isSelected() ? Integer.parseInt(this.turnTimerField.getText()): 0;
 
+		InetSocketAddress address = new InetSocketAddress("localhost", port);
+		MLGServer server = new MLGServer(address, maxPlayers, turnTimer, this.serverName.getText());
 
+		MLGClient client = new MLGClient(address);
+		client.connect();
 
+		MLGProperty config = new MLGProperty(client, server);
+		MLGLobby lobby = new MLGLobby(this.startScreen, config);
+		this.startScreen.pushController(lobby);
 	}
 
 	private void cancelButtonAction(ActionEvent event) {
