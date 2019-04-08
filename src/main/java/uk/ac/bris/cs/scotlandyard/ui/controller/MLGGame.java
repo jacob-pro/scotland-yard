@@ -37,7 +37,7 @@ public class MLGGame extends BaseGame implements Spectator {
 //		});
 //		addMenuItem(showTests);
 
-		MLGStartScreen startScreen = new MLGStartScreen(resourceManager, this.config, this::startGame);
+		MLGStartScreen startScreen = new MLGStartScreen(resourceManager, this::startGame);
 		showOverlay(startScreen.root());
 	}
 

@@ -60,7 +60,7 @@ public final class MLGHostGame implements Controller {
 		InetSocketAddress address = new InetSocketAddress(localhost, port);
 
 		try {
-			MLGServer server = MLGServer.CreateMLGServer(address, maxPlayers, turnTimer, this.serverName.getText()).get();
+			MLGServer server = MLGServer.CreateMLGServer(this.startScreen.getManager(), address, maxPlayers, turnTimer, this.serverName.getText()).get();
 			MLGConnection connection = MLGConnection.CreateMLGConnection(localhost, port).get();
 			MLGProperty config = new MLGProperty(connection, server);
 			MLGLobby lobby = new MLGLobby(this.startScreen, config);

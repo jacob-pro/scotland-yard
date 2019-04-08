@@ -8,7 +8,6 @@ import javafx.scene.layout.StackPane;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
-import uk.ac.bris.cs.scotlandyard.ui.model.BoardProperty;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
 
 import java.util.function.Consumer;
@@ -25,7 +24,10 @@ public final class MLGStartScreen implements Controller {
 		return this.stackPane;
 	}
 
-	MLGStartScreen(ResourceManager manager, BoardProperty config, Consumer<MLGProperty> callBack) {
+	private ResourceManager manager;
+
+	MLGStartScreen(ResourceManager manager, Consumer<MLGProperty> callBack) {
+		this.manager = manager;
 		Controller.bind(this);
 		this.joinButton.setOnAction(this::joinButtonAction);
 		this.hostButton.setOnAction(this::hostButtonAction);
@@ -47,6 +49,10 @@ public final class MLGStartScreen implements Controller {
 	private void hostButtonAction(ActionEvent event) {
 		MLGHostGame host = new MLGHostGame(this);
 		this.pushController(host);
+	}
+
+	ResourceManager getManager() {
+		return this.manager;
 	}
 
 }
