@@ -1,5 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.server;
 
+import com.google.gson.Gson;
 import javafx.application.Platform;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -11,16 +12,17 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-public class MLGConnection {
+public class Client {
 
-	private Set<MLGObserver> observers = new HashSet<>();
+	private Set<Observer> observers = new HashSet<>();
 	private MLGConnectionInternal internal;
+	private Gson gson = new Gson();
 
-	public MLGConnection(String hostname, Integer port, String username) throws URISyntaxException {
+	public Client(String hostname, Integer port, String username) throws URISyntaxException {
 		URI uri = new URI("ws://" + hostname + ":" + port.toString());
 		Map<String,String> headers = new HashMap<>();
 		headers.put("Username", username);
-		headers.put("Version", MLGServer.protocolVersion.toString());
+		headers.put("Version", Server.protocolVersion.toString());
 		this.internal = new MLGConnectionInternal(uri, headers);
 	}
 
@@ -45,7 +47,27 @@ public class MLGConnection {
 	}
 
 	private void didReceiveNotification(Notification notification) {
-
+		if (notification.name == null) return;
+		switch (notification.name) {
+			case LOBBY_UPDATE:
+				Lobby lobby = gson.fromJson(notification.content, Lobby.class);
+				this.tellObservers(o -> o.onLobbyChange(lobby));
+				break;
+			case GAME_START:
+				this.tellObservers(Observer::onGameStarted);
+				break;
+			case MOVE_REQUEST:
+				break;
+			case MOVE_MADE:
+				break;
+			case ROUND_STARTED:
+				break;
+			case ROTATION_COMPLETE:
+				this.tellObservers(o -> o.onRotationComplete(null));
+				break;
+			case GAME_OVER:
+				break;
+		}
 	}
 
 	private class MLGConnectionInternal extends WebSocketClient {
@@ -68,6 +90,7 @@ public class MLGConnection {
 			request.data = data;
 			request.action = action;
 			this.pendingRequests.put(request.streamID, future);
+			this.send(Client.this.gson.toJson(request));
 			return future;
 		}
 
@@ -96,7 +119,7 @@ public class MLGConnection {
 					}
 					@Override
 					public void accept(Notification message) {
-						MLGConnection.this.didReceiveNotification(message);
+						Client.this.didReceiveNotification(message);
 					}
 				});
 			});
@@ -135,17 +158,17 @@ public class MLGConnection {
 		}
 	}
 
-	private void tellObservers(Consumer<MLGObserver> tell) {
+	private void tellObservers(Consumer<Observer> tell) {
 		Platform.runLater(() -> {
 			this.observers.forEach(tell);
 		});
 	}
 
-	public void registerObserver(MLGObserver observer) {
+	public void registerObserver(Observer observer) {
 		this.observers.add(observer);
 	}
 
-	public void unregisterObserver(MLGObserver observer) {
+	public void unregisterObserver(Observer observer) {
 		this.observers.remove(observer);
 	}
 

@@ -8,9 +8,7 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
 import uk.ac.bris.cs.scotlandyard.model.*;
-import uk.ac.bris.cs.scotlandyard.server.messaging.Join;
-import uk.ac.bris.cs.scotlandyard.server.messaging.Lobby;
-import uk.ac.bris.cs.scotlandyard.server.messaging.LobbyPlayer;
+import uk.ac.bris.cs.scotlandyard.server.messaging.*;
 import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 import uk.ac.bris.cs.scotlandyard.ui.model.PlayerProperty;
 
@@ -23,13 +21,13 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
-public class MLGServer implements Spectator, Player {
+public class Server implements Spectator, Player {
 
 	static Integer protocolVersion = 1;
 
 	//Creates a server and waits for it to start
-	public static Future<MLGServer> CreateMLGServer(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
-		MLGServer server = new MLGServer(manager, address, maxPlayers, turnTimer, serverName);
+	public static Future<Server> CreateMLGServer(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
+		Server server = new Server(manager, address, maxPlayers, turnTimer, serverName);
 		server.internal.start();
 		return server.internal.creationFuture;
 	}
@@ -42,7 +40,7 @@ public class MLGServer implements Spectator, Player {
 	private MLGServerInternal internal;
 	private Gson gson = new Gson();
 
-	private MLGServer(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
+	private Server(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
 		this.manager = manager;
 		this.maxPlayers = maxPlayers;
 		this.turnTimer = turnTimer;
@@ -61,7 +59,8 @@ public class MLGServer implements Spectator, Player {
 
 	private class MLGServerInternal extends WebSocketServer {
 
-		private CompletableFuture<MLGServer> creationFuture = new CompletableFuture<>();
+		private CompletableFuture<Server> creationFuture = new CompletableFuture<>();
+		private MessageDeserializer messageDeserializer = new MessageDeserializer();
 
 		MLGServerInternal(InetSocketAddress address) {
 			super(address);
@@ -69,7 +68,7 @@ public class MLGServer implements Spectator, Player {
 
 		@Override
 		public void onStart() {
-			this.creationFuture.complete(MLGServer.this);
+			this.creationFuture.complete(Server.this);
 		}
 
 		@Override
@@ -78,12 +77,12 @@ public class MLGServer implements Spectator, Player {
 			//Create a JOIN message
 			Join join = new Join();
 
-			if (MLGServer.this.model != null) {
+			if (Server.this.model != null) {
 				join.error = Join.Error.GAME_STARTED;
 				conn.send(gson.toJson(join));
 				conn.close();
 			}
-			if (MLGServer.this.players.size() >= MLGServer.this.maxPlayers) {
+			if (Server.this.players.size() >= Server.this.maxPlayers) {
 				join.error = Join.Error.SERVER_FULL;
 				conn.send(gson.toJson(join));
 				conn.close();
@@ -93,13 +92,13 @@ public class MLGServer implements Spectator, Player {
 			Player player = new Player();
 			player.conn = conn;
 			player.name = handshake.getFieldValue("Username");
-			MLGServer.this.players.add(player);
+			Server.this.players.add(player);
 
 			//Fill the join message
-			join.serverName = MLGServer.this.serverName;
-			join.maxPlayers = MLGServer.this.maxPlayers;
-			join.turnTimer = MLGServer.this.turnTimer;
-			join.lobby = MLGServer.this.currentLobby(conn);
+			join.serverName = Server.this.serverName;
+			join.maxPlayers = Server.this.maxPlayers;
+			join.turnTimer = Server.this.turnTimer;
+			join.lobby = Server.this.currentLobby(conn);
 
 			conn.send(gson.toJson(join));
 		}
@@ -107,17 +106,24 @@ public class MLGServer implements Spectator, Player {
 		@Override
 		public void onClose(WebSocket conn, int code, String reason, boolean remote) {
 			if (remote) {
-				Optional<Player> player = MLGServer.this.players.stream().filter(p -> {return p.conn == conn;}).findFirst();
+				Optional<Player> player = Server.this.players.stream().filter(p -> {return p.conn == conn;}).findFirst();
 				player.ifPresent(p -> {
-					MLGServer.this.players.remove(p);
+					Server.this.players.remove(p);
 				});
 				System.out.println("closed " + conn.getRemoteSocketAddress() + " with exit code " + code + " additional info: " + reason);
 			}
 		}
 
 		@Override
-		public void onMessage(WebSocket conn, String message) {
-			System.out.println("received message from "	+ conn.getRemoteSocketAddress() + ": " + message);
+		public void onMessage(WebSocket conn, String string) {
+			this.messageDeserializer.deserialize(string).ifPresent(m -> {
+				m.accept(new MessageVisitor() {
+					@Override
+					public void accept(Request message) {
+
+					}
+				});
+			});
 		}
 
 		@Override
@@ -139,7 +145,6 @@ public class MLGServer implements Spectator, Player {
 			player.colour = p.colour;
 			player.ready = p.ready;
 			player.name = p.name;
-			player.you = (p.conn == forConn);
 			return player;
 		}).collect(toList());
 		return lobby;

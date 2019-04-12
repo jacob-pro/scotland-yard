@@ -12,9 +12,9 @@ import java.util.ResourceBundle;
 
 import static uk.ac.bris.cs.scotlandyard.ui.Utils.handleFatalException;
 
-public class MLGGame extends BaseGame implements Spectator {
+public class RemoteGame extends BaseGame implements Spectator {
 
-	public MLGGame(ResourceManager manager, Stage stage) {
+	public RemoteGame(ResourceManager manager, Stage stage) {
 		super(manager, stage, new BoardProperty());
 		stage.setTitle("MLG ScotlandYard");
 		stage.setScene(new Scene(this.root()));
@@ -45,7 +45,7 @@ public class MLGGame extends BaseGame implements Spectator {
 		hideOverlay();
 		try {
 			throw new RuntimeException();
-			//MLGGame.Game game = new MLGGame.Game(setup);
+			//RemoteGame.Game game = new RemoteGame.Game(setup);
 		} catch (Exception e) {
 			e.printStackTrace();
 			handleFatalException(e);

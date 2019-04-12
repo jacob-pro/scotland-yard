@@ -5,12 +5,12 @@ import javafx.scene.Parent;
 import javafx.scene.layout.StackPane;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
-import uk.ac.bris.cs.scotlandyard.server.MLGObserver;
+import uk.ac.bris.cs.scotlandyard.server.Observer;
 import uk.ac.bris.cs.scotlandyard.server.messaging.Lobby;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
 
 @BindFXML(value = "layout/MLGLobby.fxml", css = "style/mlg.css")
-public final class MLGLobby implements Controller, MLGObserver {
+public final class LobbyController implements Controller, Observer {
 
 	@FXML private StackPane root;
 
@@ -22,7 +22,7 @@ public final class MLGLobby implements Controller, MLGObserver {
 	private MLGStartScreen startScreen;
 	private MLGProperty config;
 
-	MLGLobby(MLGStartScreen startScreen, MLGProperty config) {
+	LobbyController(MLGStartScreen startScreen, MLGProperty config) {
 		this.startScreen = startScreen;
 		this.config = config;
 		Controller.bind(this);
@@ -31,7 +31,7 @@ public final class MLGLobby implements Controller, MLGObserver {
 
 	@Override
 	public void onLobbyChange(Lobby lobby) {
-
+		System.out.print(lobby);
 	}
 
 

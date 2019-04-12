@@ -3,7 +3,7 @@ package uk.ac.bris.cs.scotlandyard.server;
 import uk.ac.bris.cs.scotlandyard.model.Spectator;
 import uk.ac.bris.cs.scotlandyard.server.messaging.Lobby;
 
-public interface MLGObserver extends Spectator {
+public interface Observer extends Spectator {
 
 	//All the calls will be made from the JavaFX main thread to simulate the standard model behaviour
 

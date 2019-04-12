@@ -10,13 +10,13 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
-import uk.ac.bris.cs.scotlandyard.server.MLGConnection;
+import uk.ac.bris.cs.scotlandyard.server.Client;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
 
 import java.net.URISyntaxException;
 
 @BindFXML(value = "layout/MLGJoinGame.fxml", css = "style/mlg.css")
-public final class MLGJoinGame implements Controller {
+public final class JoinGameController implements Controller {
 
 	@FXML private StackPane root;
 	@FXML private TextField addressField;
@@ -31,7 +31,7 @@ public final class MLGJoinGame implements Controller {
 
 	private MLGStartScreen startScreen;
 
-	MLGJoinGame(MLGStartScreen startScreen) {
+	JoinGameController(MLGStartScreen startScreen) {
 		this.startScreen = startScreen;
 		Controller.bind(this);
 		this.joinButton.setOnAction(this::joinButtonAction);
@@ -48,18 +48,18 @@ public final class MLGJoinGame implements Controller {
 			port = Integer.parseInt(text.substring(text.lastIndexOf(":")+1, text.length()));
 		} else {
 			host = text;
-			port = MLGHostGame.defaultPort;
+			port = HostGameController.defaultPort;
 		}
 
 		this.progress.setVisible(true);
 		try {
-			MLGConnection connection = new MLGConnection(host, port, "client");
+			Client connection = new Client(host, port, "client");
 			connection.connect().whenComplete((result, exception) -> {
 				Platform.runLater(() -> {
 					this.progress.setVisible(false);
 					if (result != null) {
 						MLGProperty config = new MLGProperty(connection, null);
-						MLGLobby lobby = new MLGLobby(this.startScreen, config);
+						LobbyController lobby = new LobbyController(this.startScreen, config);
 						this.startScreen.pushController(lobby);
 					} else {
 						exception.printStackTrace();
