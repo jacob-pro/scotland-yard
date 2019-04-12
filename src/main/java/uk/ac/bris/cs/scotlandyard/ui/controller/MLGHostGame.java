@@ -5,11 +5,12 @@ import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
+import org.apache.commons.lang3.ObjectUtils;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
-import uk.ac.bris.cs.scotlandyard.model.Colour;
 import uk.ac.bris.cs.scotlandyard.server.MLGConnection;
 import uk.ac.bris.cs.scotlandyard.server.MLGServer;
+import uk.ac.bris.cs.scotlandyard.server.messaging.Join;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
 
 import java.net.InetSocketAddress;
@@ -22,7 +23,6 @@ public final class MLGHostGame implements Controller {
 	static Integer defaultPort = 25566;
 
 	@FXML private StackPane root;
-	@FXML private ChoiceBox<Colour> colourChoiceBox;
 	@FXML private TextField serverName;
 	@FXML private CheckBox turnTimerCheckBox;
 	@FXML private TextField turnTimerField;
@@ -48,24 +48,23 @@ public final class MLGHostGame implements Controller {
 		});
 		this.hostButton.setOnAction(this::hostButtonAction);
 		this.cancelButton.setOnAction(this::cancelButtonAction);
-		this.colourChoiceBox.getItems().setAll(Colour.values());
-
 	}
 
 	private void hostButtonAction(ActionEvent event) {
 		int port = Integer.parseInt(this.portField.getText());
 		int maxPlayers = (int) this.maxPlayersSlider.getValue();
-		int turnTimer = this.turnTimerCheckBox.isSelected() ? Integer.parseInt(this.turnTimerField.getText()): 0;
+		Integer turnTimer = this.turnTimerCheckBox.isSelected() ? Integer.valueOf(this.turnTimerField.getText()): null;
 		String localhost = "localhost";
 		InetSocketAddress address = new InetSocketAddress(localhost, port);
 
 		try {
 			MLGServer server = MLGServer.CreateMLGServer(this.startScreen.getManager(), address, maxPlayers, turnTimer, this.serverName.getText()).get();
-			MLGConnection connection = MLGConnection.CreateMLGConnection(localhost, port).get();
+			MLGConnection connection = new MLGConnection(localhost, port, "Host");
+			Join result = connection.connect().get();
 			MLGProperty config = new MLGProperty(connection, server);
 			MLGLobby lobby = new MLGLobby(this.startScreen, config);
 			this.startScreen.pushController(lobby);
-		} catch (InterruptedException | ExecutionException e) {
+		} catch (URISyntaxException | InterruptedException | ExecutionException e) {
 			throw new RuntimeException(e);
 		}
 	}

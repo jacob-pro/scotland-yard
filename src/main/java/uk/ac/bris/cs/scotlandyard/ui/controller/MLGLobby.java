@@ -6,6 +6,7 @@ import javafx.scene.layout.StackPane;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.server.MLGObserver;
+import uk.ac.bris.cs.scotlandyard.server.messaging.Lobby;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
 
 @BindFXML(value = "layout/MLGLobby.fxml", css = "style/mlg.css")
@@ -29,7 +30,7 @@ public final class MLGLobby implements Controller, MLGObserver {
 	}
 
 	@Override
-	public void onLobbyReceived() {
+	public void onLobbyChange(Lobby lobby) {
 
 	}
 

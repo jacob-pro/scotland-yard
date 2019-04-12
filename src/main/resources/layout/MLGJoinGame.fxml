@@ -10,7 +10,7 @@
    <children>
       <VBox alignment="CENTER" styleClass="mlg-config-vbox">
          <children>
-            <TextField fx:id="addressField" alignment="CENTER" promptText="Server Address" />
+            <TextField fx:id="addressField" alignment="CENTER" promptText="Server Address" text="localhost" />
             <Button fx:id="joinButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Join" />
             <Button fx:id="cancelButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Cancel" />
          </children>

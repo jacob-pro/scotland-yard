@@ -13,6 +13,8 @@ import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.server.MLGConnection;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
 
+import java.net.URISyntaxException;
+
 @BindFXML(value = "layout/MLGJoinGame.fxml", css = "style/mlg.css")
 public final class MLGJoinGame implements Controller {
 
@@ -50,18 +52,23 @@ public final class MLGJoinGame implements Controller {
 		}
 
 		this.progress.setVisible(true);
-		MLGConnection.CreateMLGConnection(host, port).whenComplete((result, exception) -> {
-			Platform.runLater(() -> {
-				this.progress.setVisible(false);
-				if (result != null) {
-					MLGProperty config = new MLGProperty(result, null);
-					MLGLobby lobby = new MLGLobby(this.startScreen, config);
-					this.startScreen.pushController(lobby);
-				} else {
-					exception.printStackTrace();
-				}
+		try {
+			MLGConnection connection = new MLGConnection(host, port, "client");
+			connection.connect().whenComplete((result, exception) -> {
+				Platform.runLater(() -> {
+					this.progress.setVisible(false);
+					if (result != null) {
+						MLGProperty config = new MLGProperty(connection, null);
+						MLGLobby lobby = new MLGLobby(this.startScreen, config);
+						this.startScreen.pushController(lobby);
+					} else {
+						exception.printStackTrace();
+					}
+				});
 			});
-		});
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void cancelButtonAction(ActionEvent event) {
