@@ -92,33 +92,31 @@ public class Client {
 
 		@Override
 		public void onMessage(String string) {
-			this.messageDeserializer.deserialize(string).ifPresent(m -> {
-				m.accept(new MessageVisitor() {
-					@Override
-					public void accept(Join message) {
+			this.messageDeserializer.deserialize(string).ifPresent(m -> m.accept(new MessageVisitor() {
+				@Override
+				public void accept(Join message) {
+					if (message.error == null) {
+						MLGConnectionInternal.this.connectFuture.complete(message);
+					} else {
+						MLGConnectionInternal.this.connectFuture.completeExceptionally(new MLGConnectionException(message.error.toString()));
+					}
+				}
+				@Override
+				public void accept(Response message) {
+					CompletableFuture<String> future = MLGConnectionInternal.this.pendingRequests.get(message.streamID);
+					if (future != null) {
 						if (message.error == null) {
-							MLGConnectionInternal.this.connectFuture.complete(message);
+							future.complete(message.data);
 						} else {
-							MLGConnectionInternal.this.connectFuture.completeExceptionally(new MLGConnectionException(message.error.toString()));
+							future.completeExceptionally(new RequestException(message.error));
 						}
 					}
-					@Override
-					public void accept(Response message) {
-						CompletableFuture<String> future = MLGConnectionInternal.this.pendingRequests.get(message.streamID);
-						if (future != null) {
-							if (message.error == null) {
-								future.complete(message.data);
-							} else {
-								future.completeExceptionally(new RequestException(message.error));
-							}
-						}
-					}
-					@Override
-					public void accept(Notification message) {
-						Client.this.didReceiveNotification(message);
-					}
-				});
-			});
+				}
+				@Override
+				public void accept(Notification message) {
+					Client.this.didReceiveNotification(message);
+				}
+			}));
 		}
 
 		@Override
@@ -155,9 +153,7 @@ public class Client {
 	}
 
 	private void tellObservers(Consumer<Observer> tell) {
-		Platform.runLater(() -> {
-			this.observers.forEach(tell);
-		});
+		Platform.runLater(() -> this.observers.forEach(tell));
 	}
 
 	public void registerObserver(Observer observer) {

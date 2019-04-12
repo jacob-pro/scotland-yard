@@ -123,9 +123,7 @@ public class Server implements Spectator, Player {
 
 	private void sendNotificationToAll(Notification notification) {
 		String s = this.gson.toJson(notification);
-		this.players.forEach(p -> {
-			p.conn.send(s);
-		});
+		this.players.forEach(p -> p.conn.send(s));
 	}
 
 	@Override
@@ -216,23 +214,21 @@ public class Server implements Spectator, Player {
 		@Override
 		public void onClose(WebSocket conn, int code, String reason, boolean remote) {
 			if (remote) {
-				Optional<ServerPlayer> player = Server.this.players.stream().filter(p -> {return p.conn == conn;}).findFirst();
+				Optional<ServerPlayer> player = Server.this.players.stream().filter(p -> p.conn == conn).findFirst();
 				player.ifPresent(Server.this::handlePlayerExit);
 			}
 		}
 
 		@Override
 		public void onMessage(WebSocket conn, String string) {
-			this.messageDeserializer.deserialize(string).ifPresent(m -> {
-				m.accept(new MessageVisitor() {
-					//Incoming requests
-					@Override
-					public void accept(Request message) {
-						Optional<ServerPlayer> player = Server.this.players.stream().filter(p -> {return p.conn == conn;}).findFirst();
-						player.ifPresent(p -> Server.this.handleRequest(message, p));
-					}
-				});
-			});
+			this.messageDeserializer.deserialize(string).ifPresent(m -> m.accept(new MessageVisitor() {
+				//Incoming requests
+				@Override
+				public void accept(Request message) {
+					Optional<ServerPlayer> player = Server.this.players.stream().filter(p -> p.conn == conn).findFirst();
+					player.ifPresent(p -> Server.this.handleRequest(message, p));
+				}
+			}));
 		}
 
 		@Override
@@ -246,7 +242,7 @@ public class Server implements Spectator, Player {
 
 	private void startGame() {
 
-		Set<Colour> enabledColours = this.players.stream().map(p -> {return p.colour;}).collect(Collectors.toSet());
+		Set<Colour> enabledColours = this.players.stream().map(p -> p.colour).collect(Collectors.toSet());
 
 		ModelProperty defaults = ModelProperty.createDefault(this.manager);
 		ObservableList<PlayerProperty> enabledPlayers = FXCollections.observableArrayList(defaults.allPlayers().stream()
