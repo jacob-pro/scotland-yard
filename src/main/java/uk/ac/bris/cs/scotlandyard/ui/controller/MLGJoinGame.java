@@ -16,7 +16,7 @@ import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
 import java.net.URISyntaxException;
 
 @BindFXML(value = "layout/MLGJoinGame.fxml", css = "style/mlg.css")
-public final class JoinGameController implements Controller {
+public final class MLGJoinGame implements Controller {
 
 	@FXML private StackPane root;
 	@FXML private TextField addressField;
@@ -31,7 +31,7 @@ public final class JoinGameController implements Controller {
 
 	private MLGStartScreen startScreen;
 
-	JoinGameController(MLGStartScreen startScreen) {
+	MLGJoinGame(MLGStartScreen startScreen) {
 		this.startScreen = startScreen;
 		Controller.bind(this);
 		this.joinButton.setOnAction(this::joinButtonAction);
@@ -48,7 +48,7 @@ public final class JoinGameController implements Controller {
 			port = Integer.parseInt(text.substring(text.lastIndexOf(":")+1, text.length()));
 		} else {
 			host = text;
-			port = HostGameController.defaultPort;
+			port = MLGHostGame.defaultPort;
 		}
 
 		this.progress.setVisible(true);
@@ -59,7 +59,7 @@ public final class JoinGameController implements Controller {
 					this.progress.setVisible(false);
 					if (result != null) {
 						MLGProperty config = new MLGProperty(connection, null);
-						LobbyController lobby = new LobbyController(this.startScreen, config);
+						MLGLobby lobby = new MLGLobby(this.startScreen, config);
 						this.startScreen.pushController(lobby);
 					} else {
 						exception.printStackTrace();

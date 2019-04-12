@@ -17,7 +17,7 @@ import java.net.URISyntaxException;
 import java.util.concurrent.ExecutionException;
 
 @BindFXML(value = "layout/MLGHostGame.fxml", css = "style/mlg.css")
-public final class HostGameController implements Controller {
+public final class MLGHostGame implements Controller {
 
 	static Integer defaultPort = 25566;
 
@@ -37,10 +37,10 @@ public final class HostGameController implements Controller {
 
 	private MLGStartScreen startScreen;
 
-	HostGameController(MLGStartScreen startScreen) {
+	MLGHostGame(MLGStartScreen startScreen) {
 		this.startScreen = startScreen;
 		Controller.bind(this);
-		this.portField.setText(HostGameController.defaultPort.toString());
+		this.portField.setText(MLGHostGame.defaultPort.toString());
 		this.turnTimerCheckBox.setOnAction(a -> {
 			this.turnTimerField.setDisable(!this.turnTimerCheckBox.isSelected());
 			this.turnTimerField.setText(null);
@@ -61,7 +61,7 @@ public final class HostGameController implements Controller {
 			Client connection = new Client(localhost, port, "Host");
 			Join result = connection.connect().get();
 			MLGProperty config = new MLGProperty(connection, server);
-			LobbyController lobby = new LobbyController(this.startScreen, config);
+			MLGLobby lobby = new MLGLobby(this.startScreen, config);
 			this.startScreen.pushController(lobby);
 		} catch (URISyntaxException | InterruptedException | ExecutionException e) {
 			throw new RuntimeException(e);

@@ -8,9 +8,9 @@ public class Join extends Message {
 
 	public Error error;
 	public String serverName;
-	public int maxPlayers;
+	public Integer maxPlayers;
 	public Integer turnTimer;
-	public Lobby lobby;
+	public Integer playerID;
 
 	public Join() {
 		this.messageType = MessageType.JOIN;

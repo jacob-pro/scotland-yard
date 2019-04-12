@@ -23,8 +23,6 @@ import static java.util.stream.Collectors.toList;
 
 public class Server implements Spectator, Player {
 
-	static Integer protocolVersion = 1;
-
 	//Creates a server and waits for it to start
 	public static Future<Server> CreateMLGServer(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
 		Server server = new Server(manager, address, maxPlayers, turnTimer, serverName);
@@ -32,6 +30,15 @@ public class Server implements Spectator, Player {
 		return server.internal.creationFuture;
 	}
 
+	private class ServerPlayer {
+		String name;
+		Colour colour = null;
+		Boolean ready = false;
+		WebSocket conn;
+		Integer id;
+	}
+
+	static String protocolVersionString = "1.0";
 	private ScotlandYardGame model = null;
 	private int maxPlayers;
 	private Integer turnTimer;
@@ -39,6 +46,8 @@ public class Server implements Spectator, Player {
 	private ResourceManager manager;
 	private MLGServerInternal internal;
 	private Gson gson = new Gson();
+	private List<ServerPlayer> players = new ArrayList<>();
+	private Counter playerIDCounter = new Counter();
 
 	private Server(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
 		this.manager = manager;
@@ -48,13 +57,107 @@ public class Server implements Spectator, Player {
 		this.internal = new MLGServerInternal(address);
 	}
 
-	private List<Player> players = new ArrayList<>();
+	private void handleRequest(Request request, ServerPlayer player) {
+		Response response = new Response();
+		response.streamID = request.streamID;
+		if (request.action == null) {
+			response.error = "Unknown action";
+		} else {
+			switch (request.action) {
+				case GET_LOBBY:
+					Lobby lobby = this.currentLobby();
+					response.data = this.gson.toJson(lobby);
+					break;
+				case SET_COLOUR:
+					try {
+						Colour colour = Colour.valueOf(request.data);
+						if (this.players.stream().anyMatch(p -> p.colour == colour)){
+							response.error = "Colour taken";
+						} else {
+							player.colour = colour;
+							this.sendLobbyUpdateToAll();
+						}
+					} catch (IllegalArgumentException e) {
+						response.error = "Illegal colour";
+					}
+					break;
+				case SET_READY:
+					try {
+						player.ready = Boolean.valueOf(request.data);
+						response.data = "Success";
+						this.sendLobbyUpdateToAll();
+					} catch (IllegalArgumentException e) {
+						response.error = "Illegal value";
+					}
+					break;
+				case MAKE_MOVE:
+					break;
+			}
+		}
+		player.conn.send(this.gson.toJson(response));
+	}
 
-	private class Player {
-		String name;
-		Colour colour = null;
-		Boolean ready = false;
-		WebSocket conn;
+	private void handlePlayerExit(ServerPlayer player) {
+		this.players.remove(player);
+	}
+
+	private Lobby currentLobby() {
+		Lobby lobby = new Lobby();
+		lobby.startTime = null;
+		lobby.players = this.players.stream().map(p -> {
+			LobbyPlayer player = new LobbyPlayer();
+			player.colour = p.colour;
+			player.ready = p.ready;
+			player.name = p.name;
+			player.id = p.id;
+			return player;
+		}).collect(toList());
+		return lobby;
+	}
+
+	private void sendLobbyUpdateToAll() {
+		Notification notification = new Notification(Notification.NotificationName.LOBBY_UPDATE);
+		notification.content = gson.toJson(Server.this.currentLobby());
+		this.sendNotificationToAll(notification);
+	}
+
+	private void sendNotificationToAll(Notification notification) {
+		String s = this.gson.toJson(notification);
+		this.players.forEach(p -> {
+			p.conn.send(s);
+		});
+	}
+
+	@Override
+	public void onRotationComplete(ScotlandYardView view) {
+		if (!view.isGameOver()) this.model.startRotate();
+		Notification notification = new Notification(Notification.NotificationName.ROTATION_COMPLETE);
+		this.sendNotificationToAll(notification);
+	}
+
+	public void onMoveMade(ScotlandYardView view, Move move) {
+		Notification notification = new Notification(Notification.NotificationName.MOVE_MADE);
+		this.sendNotificationToAll(notification);
+	}
+
+	public void onRoundStarted(ScotlandYardView view, int round) {
+		Notification notification = new Notification(Notification.NotificationName.ROUND_STARTED);
+		notification.content = String.valueOf(round);
+		this.sendNotificationToAll(notification);
+	}
+
+	public void onGameOver(ScotlandYardView view, Set<Colour> winningPlayers) {
+		Notification notification = new Notification(Notification.NotificationName.GAME_OVER);
+		notification.content = gson.toJson(winningPlayers);
+		this.sendNotificationToAll(notification);
+	}
+
+	@Override
+	public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
+		Colour colour = view.getCurrentPlayer();
+		@SuppressWarnings("OptionalGetWithoutIsPresent")
+		ServerPlayer player = this.players.stream().filter(p -> p.colour == colour).findFirst().get();
+		Notification notification = new Notification(Notification.NotificationName.MOVE_REQUEST);
 	}
 
 	private class MLGServerInternal extends WebSocketServer {
@@ -87,30 +190,34 @@ public class Server implements Spectator, Player {
 				conn.send(gson.toJson(join));
 				conn.close();
 			}
+			if (!handshake.getFieldValue("Version").equals(Server.protocolVersionString)) {
+				join.error = Join.Error.VERSION_MISMATCH;
+				conn.send(gson.toJson(join));
+				conn.close();
+			}
 
 			//Create the player
-			Player player = new Player();
+			ServerPlayer player = new ServerPlayer();
 			player.conn = conn;
 			player.name = handshake.getFieldValue("Username");
+			player.id = Server.this.playerIDCounter.next();
 			Server.this.players.add(player);
 
 			//Fill the join message
 			join.serverName = Server.this.serverName;
 			join.maxPlayers = Server.this.maxPlayers;
 			join.turnTimer = Server.this.turnTimer;
-			join.lobby = Server.this.currentLobby(conn);
+			join.playerID = player.id;
 
 			conn.send(gson.toJson(join));
+			Server.this.sendLobbyUpdateToAll();
 		}
 
 		@Override
 		public void onClose(WebSocket conn, int code, String reason, boolean remote) {
 			if (remote) {
-				Optional<Player> player = Server.this.players.stream().filter(p -> {return p.conn == conn;}).findFirst();
-				player.ifPresent(p -> {
-					Server.this.players.remove(p);
-				});
-				System.out.println("closed " + conn.getRemoteSocketAddress() + " with exit code " + code + " additional info: " + reason);
+				Optional<ServerPlayer> player = Server.this.players.stream().filter(p -> {return p.conn == conn;}).findFirst();
+				player.ifPresent(Server.this::handlePlayerExit);
 			}
 		}
 
@@ -118,9 +225,11 @@ public class Server implements Spectator, Player {
 		public void onMessage(WebSocket conn, String string) {
 			this.messageDeserializer.deserialize(string).ifPresent(m -> {
 				m.accept(new MessageVisitor() {
+					//Incoming requests
 					@Override
 					public void accept(Request message) {
-
+						Optional<ServerPlayer> player = Server.this.players.stream().filter(p -> {return p.conn == conn;}).findFirst();
+						player.ifPresent(p -> Server.this.handleRequest(message, p));
 					}
 				});
 			});
@@ -132,51 +241,7 @@ public class Server implements Spectator, Player {
 			if(!this.creationFuture.isDone()) {
 				this.creationFuture.completeExceptionally(ex);
 			}
-			System.err.println("an error occured on connection " + conn.getRemoteSocketAddress()  + ":" + ex);
 		}
-
-	}
-
-	private Lobby currentLobby(WebSocket forConn) {
-		Lobby lobby = new Lobby();
-		lobby.startTime = null;
-		lobby.players = this.players.stream().map(p -> {
-			LobbyPlayer player = new LobbyPlayer();
-			player.colour = p.colour;
-			player.ready = p.ready;
-			player.name = p.name;
-			return player;
-		}).collect(toList());
-		return lobby;
-	}
-
-	private void sendToAll(String s) {
-		this.players.forEach(p -> {
-			p.conn.send(s);
-		});
-	}
-
-	@Override
-	public void onRotationComplete(ScotlandYardView view) {
-		if (!view.isGameOver()) this.model.startRotate();
-		this.sendToAll("rotation complete");
-	}
-
-	public void onMoveMade(ScotlandYardView view, Move move) {
-		this.sendToAll("move made");
-	}
-
-	public void onRoundStarted(ScotlandYardView view, int round) {
-		this.sendToAll("round started");
-	}
-
-	public void onGameOver(ScotlandYardView view, Set<Colour> winningPlayers) {
-		this.sendToAll("game over");
-	}
-
-	@Override
-	public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
-		Colour player = view.getCurrentPlayer();
 	}
 
 	private void startGame() {
@@ -215,6 +280,10 @@ public class Server implements Spectator, Player {
 		List<PlayerConfiguration> detectives = configs.stream().filter(p -> p.colour.isDetective()).collect(toList());
 
 		this.model = new ScotlandYardModel(setup.revealRounds(), setup.graphProperty().get(), mrX, detectives.get(0), detectives.stream().skip(1).toArray(PlayerConfiguration[]::new));
+
+		Notification notification = new Notification(Notification.NotificationName.GAME_START);
+		this.sendNotificationToAll(notification);
+
 		model.registerSpectator(this);
 		model.startRotate();
 	}

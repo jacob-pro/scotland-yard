@@ -6,5 +6,5 @@ public class LobbyPlayer {
 	public String name;
 	public Colour colour;
 	public Boolean ready;
-	public Boolean you;
+	public Integer id;
 }

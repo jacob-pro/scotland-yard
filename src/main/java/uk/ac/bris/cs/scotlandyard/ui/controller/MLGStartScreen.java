@@ -42,12 +42,12 @@ public final class MLGStartScreen implements Controller {
 	}
 
 	private void joinButtonAction(ActionEvent event) {
-		JoinGameController join = new JoinGameController(this);
+		MLGJoinGame join = new MLGJoinGame(this);
 		this.pushController(join);
 	}
 
 	private void hostButtonAction(ActionEvent event) {
-		HostGameController host = new HostGameController(this);
+		MLGHostGame host = new MLGHostGame(this);
 		this.pushController(host);
 	}
 

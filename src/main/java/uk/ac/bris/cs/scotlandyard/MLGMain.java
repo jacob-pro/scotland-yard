@@ -3,7 +3,7 @@ package uk.ac.bris.cs.scotlandyard;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import uk.ac.bris.cs.scotlandyard.ui.Utils;
-import uk.ac.bris.cs.scotlandyard.ui.controller.RemoteGame;
+import uk.ac.bris.cs.scotlandyard.ui.controller.MLGGame;
 
 public final class MLGMain {
 
@@ -15,7 +15,7 @@ public final class MLGMain {
 
 		@Override public void start(Stage stage) {
 			Thread.currentThread().setUncaughtExceptionHandler((thread, throwable) -> Utils.handleFatalException(throwable));
-			new RemoteGame(Utils.setupResources(), stage);
+			new MLGGame(Utils.setupResources(), stage);
 		}
 	}
 

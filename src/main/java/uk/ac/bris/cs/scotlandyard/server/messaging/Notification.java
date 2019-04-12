@@ -9,7 +9,8 @@ public class Notification extends Message {
 	public String content;
 	public NotificationName name;
 
-	public Notification() {
+	public Notification(NotificationName name) {
+		this.name = name;
 		this.messageType = MessageType.NOTIFICATION;
 	}
 

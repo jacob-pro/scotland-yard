@@ -22,7 +22,7 @@ public class Client {
 		URI uri = new URI("ws://" + hostname + ":" + port.toString());
 		Map<String,String> headers = new HashMap<>();
 		headers.put("Username", username);
-		headers.put("Version", Server.protocolVersion.toString());
+		headers.put("Version", Server.protocolVersionString);
 		this.internal = new MLGConnectionInternal(uri, headers);
 	}
 
@@ -32,18 +32,15 @@ public class Client {
 	}
 
 	public CompletableFuture<Lobby> getLobby() {
-		this.internal.performRequest(Action.GET_LOBBY, null);
-		return null;
+		return this.internal.performRequest(Request.Action.GET_LOBBY, null).thenApply(t -> gson.fromJson(t, Lobby.class));
 	}
 
 	public CompletableFuture<?> setColour(Colour colour) {
-		this.internal.performRequest(Action.SET_COLOUR, colour.toString());
-		return null;
+		return this.internal.performRequest(Request.Action.SET_COLOUR, colour.toString());
 	}
 
 	public CompletableFuture<?> setReady(Boolean ready) {
-		this.internal.performRequest(Action.SET_READY, ready.toString());
-		return null;
+		return this.internal.performRequest(Request.Action.SET_READY, ready.toString());
 	}
 
 	private void didReceiveNotification(Notification notification) {
@@ -72,8 +69,8 @@ public class Client {
 
 	private class MLGConnectionInternal extends WebSocketClient {
 
-		private int streamIDCounter = 0;
-		private Map<Integer, CompletableFuture<String>> pendingRequests;
+		private Counter streamIDCounter = new Counter();
+		private Map<Integer, CompletableFuture<String>> pendingRequests = new HashMap<>();
 
 		private CompletableFuture<Join> connectFuture = new CompletableFuture<>();
 		private MessageDeserializer messageDeserializer = new MessageDeserializer();
@@ -82,11 +79,10 @@ public class Client {
 			super(uri, headers);
 		}
 
-		CompletableFuture<String> performRequest(Action action, String data) {
+		CompletableFuture<String> performRequest(Request.Action action, String data) {
 			CompletableFuture<String> future = new CompletableFuture<>();
-			this.streamIDCounter++;
 			Request request = new Request();
-			request.streamID = this.streamIDCounter;
+			request.streamID = this.streamIDCounter.next();
 			request.data = data;
 			request.action = action;
 			this.pendingRequests.put(request.streamID, future);
