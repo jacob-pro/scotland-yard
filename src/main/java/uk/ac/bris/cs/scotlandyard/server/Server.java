@@ -252,7 +252,7 @@ public class Server implements Spectator, Player {
 		ObservableList<PlayerProperty> enabledPlayers = FXCollections.observableArrayList(defaults.allPlayers().stream()
 				.filter(p -> enabledColours.contains(p.colour())).collect(toList()));
 
-		// Copied from GameSetup - Use random locations for all players
+		// Code below is copied from GameSetup - Use random locations for all players
 		ArrayList<Integer> availableLocation = new ArrayList<>(StandardGame.DETECTIVE_LOCATIONS);
 		Collections.shuffle(availableLocation);
 		ArrayDeque<Integer> deque = new ArrayDeque<>(availableLocation);
