@@ -1,8 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 
 <StackPane fx:id="root" styleClass="mlg-config-screen" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1">
-
+   <children>
+      <VBox prefHeight="200.0" prefWidth="100.0">
+         <children>
+            <Label text="Server Name:" />
+            <Label layoutX="10.0" layoutY="10.0" text="Max Players:" />
+            <Label layoutX="10.0" layoutY="26.0" text="Turn timer:" />
+            <TableView prefHeight="200.0" prefWidth="200.0">
+              <columns>
+                <TableColumn prefWidth="75.0" text="C1" />
+                <TableColumn prefWidth="75.0" text="C2" />
+              </columns>
+            </TableView>
+            <Button mnemonicParsing="false" text="Ready" />
+            <Button fx:id="exitButton" mnemonicParsing="false" text="Exit" />
+         </children>
+      </VBox>
+   </children>
 </StackPane>
-

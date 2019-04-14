@@ -17,6 +17,7 @@ public class Client {
 	private Set<Observer> observers = new HashSet<>();
 	private MLGConnectionInternal internal;
 	private Gson gson = new Gson();
+	private Join joinMessage;
 
 	public Client(String hostname, Integer port, String username) throws URISyntaxException {
 		URI uri = new URI("ws://" + hostname + ":" + port.toString());
@@ -43,11 +44,10 @@ public class Client {
 		return this.internal.performRequest(Request.Action.SET_READY, ready.toString());
 	}
 
-	private void didReceiveNotification(Notification notification) {
-		if (notification.name == null) return;
-		switch (notification.name) {
+	private void didReceiveNotification(Notification.NotificationName name, String content) {
+		switch (name) {
 			case LOBBY_UPDATE:
-				Lobby lobby = gson.fromJson(notification.content, Lobby.class);
+				Lobby lobby = gson.fromJson(content, Lobby.class);
 				this.tellObservers(o -> o.onLobbyChange(lobby));
 				break;
 			case GAME_START:
@@ -67,6 +67,7 @@ public class Client {
 		}
 	}
 
+	//The internal class handles communication, but not game logic
 	private class MLGConnectionInternal extends WebSocketClient {
 
 		private Counter streamIDCounter = new Counter();
@@ -95,6 +96,7 @@ public class Client {
 			this.messageDeserializer.deserialize(string).ifPresent(m -> m.accept(new MessageVisitor() {
 				@Override
 				public void accept(Join message) {
+					Client.this.joinMessage = message;
 					if (message.error == null) {
 						MLGConnectionInternal.this.connectFuture.complete(message);
 					} else {
@@ -114,7 +116,8 @@ public class Client {
 				}
 				@Override
 				public void accept(Notification message) {
-					Client.this.didReceiveNotification(message);
+					if (message.name == null) return;
+					Client.this.didReceiveNotification(message.name, message.content);
 				}
 			}));
 		}
@@ -162,6 +165,18 @@ public class Client {
 
 	public void unregisterObserver(Observer observer) {
 		this.observers.remove(observer);
+	}
+
+	public Join joinMessage() {
+		return this.joinMessage;
+	}
+
+	public void close() {
+		try {
+			this.internal.closeBlocking();
+		} catch (InterruptedException ignored) {
+
+		}
 	}
 
 }

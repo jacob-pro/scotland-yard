@@ -9,8 +9,7 @@ import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.server.Client;
 import uk.ac.bris.cs.scotlandyard.server.Server;
-import uk.ac.bris.cs.scotlandyard.server.messaging.Join;
-import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
+import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
@@ -56,16 +55,20 @@ public final class MLGHostGame implements Controller {
 		String localhost = "localhost";
 		InetSocketAddress address = new InetSocketAddress(localhost, port);
 
+		MLGModel config = new MLGModel();
+
 		try {
-			Server server = Server.CreateMLGServer(this.startScreen.getManager(), address, maxPlayers, turnTimer, this.serverName.getText()).get();
-			Client connection = new Client(localhost, port, "Host");
-			Join result = connection.connect().get();
-			MLGProperty config = new MLGProperty(connection, server);
-			MLGLobby lobby = new MLGLobby(this.startScreen, config);
-			this.startScreen.pushController(lobby);
-		} catch (URISyntaxException | InterruptedException | ExecutionException e) {
-			throw new RuntimeException(e);
+			config.server = Server.CreateMLGServer(this.startScreen.getManager(), address, maxPlayers, turnTimer, this.serverName.getText()).get();
+			config.client = new Client(localhost, port, "Host");
+			config.client.connect().get();
+		} catch (InterruptedException | ExecutionException | URISyntaxException e) {
+			config.cleanUp();
+			e.printStackTrace();
+			return;
 		}
+
+		MLGLobby lobby = new MLGLobby(this.startScreen, config);
+		this.startScreen.pushController(lobby);
 	}
 
 	private void cancelButtonAction(ActionEvent event) {

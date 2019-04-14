@@ -11,7 +11,7 @@ import javafx.scene.layout.VBox;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.server.Client;
-import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
+import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 
 import java.net.URISyntaxException;
 
@@ -51,24 +51,27 @@ public final class MLGJoinGame implements Controller {
 			port = MLGHostGame.defaultPort;
 		}
 
-		this.progress.setVisible(true);
+		MLGModel config = new MLGModel();
 		try {
-			Client connection = new Client(host, port, "client");
-			connection.connect().whenComplete((result, exception) -> {
-				Platform.runLater(() -> {
-					this.progress.setVisible(false);
-					if (result != null) {
-						MLGProperty config = new MLGProperty(connection, null);
-						MLGLobby lobby = new MLGLobby(this.startScreen, config);
-						this.startScreen.pushController(lobby);
-					} else {
-						exception.printStackTrace();
-					}
-				});
-			});
+			config.client = new Client(host, port, "client");
 		} catch (URISyntaxException e) {
+			config.cleanUp();
 			e.printStackTrace();
+			return;
 		}
+
+		this.progress.setVisible(true);
+		config.client.connect().whenComplete((result, exception) -> {
+			Platform.runLater(() -> {
+				this.progress.setVisible(false);
+				if (result != null) {
+					MLGLobby lobby = new MLGLobby(this.startScreen, config);
+					this.startScreen.pushController(lobby);
+				} else {
+					exception.printStackTrace();
+				}
+			});
+		});
 	}
 
 	private void cancelButtonAction(ActionEvent event) {

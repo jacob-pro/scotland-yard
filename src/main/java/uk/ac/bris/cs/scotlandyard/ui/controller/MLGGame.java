@@ -5,7 +5,7 @@ import javafx.stage.Stage;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
 import uk.ac.bris.cs.scotlandyard.model.Spectator;
 import uk.ac.bris.cs.scotlandyard.ui.model.BoardProperty;
-import uk.ac.bris.cs.scotlandyard.ui.model.MLGProperty;
+import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -41,7 +41,7 @@ public class MLGGame extends BaseGame implements Spectator {
 		showOverlay(startScreen.root());
 	}
 
-	private void startGame(MLGProperty config) {
+	private void startGame(MLGModel config) {
 		hideOverlay();
 		try {
 			throw new RuntimeException();

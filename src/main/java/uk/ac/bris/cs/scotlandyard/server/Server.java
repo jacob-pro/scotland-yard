@@ -30,12 +30,21 @@ public class Server implements Spectator, Player {
 		return server.internal.creationFuture;
 	}
 
+	private Counter playerIDCounter = new Counter();
 	private class ServerPlayer {
 		String name;
-		Colour colour = null;
-		Boolean ready = false;
+		Colour colour;
+		Boolean ready;
 		WebSocket conn;
 		Integer id;
+
+		ServerPlayer(WebSocket conn, String name) {
+			this.conn = conn;
+			this.name = name;
+			this.colour = null;
+			this.ready = false;
+			this.id = Server.this.playerIDCounter.next();
+		}
 	}
 
 	static String protocolVersionString = "1.0";
@@ -47,7 +56,6 @@ public class Server implements Spectator, Player {
 	private MLGServerInternal internal;
 	private Gson gson = new Gson();
 	private List<ServerPlayer> players = new ArrayList<>();
-	private Counter playerIDCounter = new Counter();
 
 	private Server(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
 		this.manager = manager;
@@ -57,9 +65,7 @@ public class Server implements Spectator, Player {
 		this.internal = new MLGServerInternal(address);
 	}
 
-	private void handleRequest(Request request, ServerPlayer player) {
-		Response response = new Response();
-		response.streamID = request.streamID;
+	private void handleRequest(Request request, Response response, ServerPlayer player) {
 		if (request.action == null) {
 			response.error = "Unknown action";
 		} else {
@@ -94,11 +100,15 @@ public class Server implements Spectator, Player {
 					break;
 			}
 		}
-		player.conn.send(this.gson.toJson(response));
 	}
 
 	private void handlePlayerExit(ServerPlayer player) {
 		this.players.remove(player);
+		if (this.model == null) {
+			this.sendLobbyUpdateToAll();
+		} else {
+			//the other team wins
+		}
 	}
 
 	private Lobby currentLobby() {
@@ -158,6 +168,7 @@ public class Server implements Spectator, Player {
 		Notification notification = new Notification(Notification.NotificationName.MOVE_REQUEST);
 	}
 
+	//The internal class handles communication, but not game logic
 	private class MLGServerInternal extends WebSocketServer {
 
 		private CompletableFuture<Server> creationFuture = new CompletableFuture<>();
@@ -195,10 +206,7 @@ public class Server implements Spectator, Player {
 			}
 
 			//Create the player
-			ServerPlayer player = new ServerPlayer();
-			player.conn = conn;
-			player.name = handshake.getFieldValue("Username");
-			player.id = Server.this.playerIDCounter.next();
+			ServerPlayer player = new ServerPlayer(conn, handshake.getFieldValue("Username"));
 			Server.this.players.add(player);
 
 			//Fill the join message
@@ -226,7 +234,12 @@ public class Server implements Spectator, Player {
 				@Override
 				public void accept(Request message) {
 					Optional<ServerPlayer> player = Server.this.players.stream().filter(p -> p.conn == conn).findFirst();
-					player.ifPresent(p -> Server.this.handleRequest(message, p));
+					player.ifPresent(p -> {
+						Response response = new Response();
+						response.streamID = message.streamID;
+						Server.this.handleRequest(message, response, p);
+						p.conn.send(gson.toJson(response));
+					});
 				}
 			}));
 		}
@@ -240,6 +253,8 @@ public class Server implements Spectator, Player {
 		}
 	}
 
+	// Code below is copied from GameSetup - Use random locations for all players
+	@SuppressWarnings("Duplicates")
 	private void startGame() {
 
 		Set<Colour> enabledColours = this.players.stream().map(p -> p.colour).collect(Collectors.toSet());
@@ -248,7 +263,6 @@ public class Server implements Spectator, Player {
 		ObservableList<PlayerProperty> enabledPlayers = FXCollections.observableArrayList(defaults.allPlayers().stream()
 				.filter(p -> enabledColours.contains(p.colour())).collect(toList()));
 
-		// Code below is copied from GameSetup - Use random locations for all players
 		ArrayList<Integer> availableLocation = new ArrayList<>(StandardGame.DETECTIVE_LOCATIONS);
 		Collections.shuffle(availableLocation);
 		ArrayDeque<Integer> deque = new ArrayDeque<>(availableLocation);
@@ -282,6 +296,14 @@ public class Server implements Spectator, Player {
 
 		model.registerSpectator(this);
 		model.startRotate();
+	}
+
+	public void close() {
+		try {
+			this.internal.stop(0);
+		} catch (InterruptedException ignored) {
+
+		}
 	}
 
 }
