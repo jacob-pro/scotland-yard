@@ -2,15 +2,11 @@ package uk.ac.bris.cs.scotlandyard.network.messaging;
 
 public class Notification extends Message {
 
-	public enum NotificationName {
-		LOBBY_UPDATE, GAME_START, MOVE_REQUEST, MOVE_MADE, ROUND_STARTED, ROTATION_COMPLETE, GAME_OVER
-	}
-
 	public String content;
-	public NotificationName name;
+	public String name;
 
-	public Notification(NotificationName name) {
-		this.name = name;
+	public Notification(Object name) {
+		this.name = name.toString();
 		this.messageType = MessageType.NOTIFICATION;
 	}
 

@@ -11,6 +11,8 @@ import uk.ac.bris.cs.scotlandyard.model.*;
 import uk.ac.bris.cs.scotlandyard.network.messaging.*;
 import uk.ac.bris.cs.scotlandyard.network.model.Lobby;
 import uk.ac.bris.cs.scotlandyard.network.model.LobbyPlayer;
+import uk.ac.bris.cs.scotlandyard.network.model.NotificationNames;
+import uk.ac.bris.cs.scotlandyard.network.model.RequestActions;
 import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 import uk.ac.bris.cs.scotlandyard.ui.model.PlayerProperty;
 
@@ -72,7 +74,9 @@ public class Server implements Spectator, Player {
 		if (request.action == null) {
 			response.error = "Unknown action";
 		} else {
-			switch (request.action) {
+			RequestActions action = Arrays.stream(RequestActions.values()).filter(v -> v.toString().equals(request.action)).findAny().orElse(null);
+			if (action == null) return;
+			switch (action) {
 				case GET_LOBBY:
 					Lobby lobby = this.currentLobby();
 					response.data = this.gson.toJson(lobby);
@@ -128,7 +132,7 @@ public class Server implements Spectator, Player {
 	}
 
 	private void sendLobbyUpdateToAll() {
-		Notification notification = new Notification(Notification.NotificationName.LOBBY_UPDATE);
+		Notification notification = new Notification(NotificationNames.LOBBY_UPDATE);
 		notification.content = gson.toJson(Server.this.currentLobby());
 		this.sendNotificationToAll(notification);
 	}
@@ -141,23 +145,23 @@ public class Server implements Spectator, Player {
 	@Override
 	public void onRotationComplete(ScotlandYardView view) {
 		if (!view.isGameOver()) this.model.startRotate();
-		Notification notification = new Notification(Notification.NotificationName.ROTATION_COMPLETE);
+		Notification notification = new Notification(NotificationNames.ROTATION_COMPLETE);
 		this.sendNotificationToAll(notification);
 	}
 
 	public void onMoveMade(ScotlandYardView view, Move move) {
-		Notification notification = new Notification(Notification.NotificationName.MOVE_MADE);
+		Notification notification = new Notification(NotificationNames.MOVE_MADE);
 		this.sendNotificationToAll(notification);
 	}
 
 	public void onRoundStarted(ScotlandYardView view, int round) {
-		Notification notification = new Notification(Notification.NotificationName.ROUND_STARTED);
+		Notification notification = new Notification(NotificationNames.ROUND_STARTED);
 		notification.content = String.valueOf(round);
 		this.sendNotificationToAll(notification);
 	}
 
 	public void onGameOver(ScotlandYardView view, Set<Colour> winningPlayers) {
-		Notification notification = new Notification(Notification.NotificationName.GAME_OVER);
+		Notification notification = new Notification(NotificationNames.GAME_OVER);
 		notification.content = gson.toJson(winningPlayers);
 		this.sendNotificationToAll(notification);
 	}
@@ -167,7 +171,7 @@ public class Server implements Spectator, Player {
 		Colour colour = view.getCurrentPlayer();
 		@SuppressWarnings("OptionalGetWithoutIsPresent")
 		ServerPlayer player = this.players.stream().filter(p -> p.colour == colour).findFirst().get();
-		Notification notification = new Notification(Notification.NotificationName.MOVE_REQUEST);
+		Notification notification = new Notification(NotificationNames.MOVE_REQUEST);
 	}
 
 	//The internal class handles communication, but not game logic
@@ -293,7 +297,7 @@ public class Server implements Spectator, Player {
 
 		this.model = new ScotlandYardModel(setup.revealRounds(), setup.graphProperty().get(), mrX, detectives.get(0), detectives.stream().skip(1).toArray(PlayerConfiguration[]::new));
 
-		Notification notification = new Notification(Notification.NotificationName.GAME_START);
+		Notification notification = new Notification(NotificationNames.GAME_START);
 		this.sendNotificationToAll(notification);
 
 		model.registerSpectator(this);

@@ -7,6 +7,8 @@ import org.java_websocket.handshake.ServerHandshake;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
 import uk.ac.bris.cs.scotlandyard.network.messaging.*;
 import uk.ac.bris.cs.scotlandyard.network.model.Lobby;
+import uk.ac.bris.cs.scotlandyard.network.model.NotificationNames;
+import uk.ac.bris.cs.scotlandyard.network.model.RequestActions;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,22 +38,24 @@ public class Client {
 	}
 
 	public CompletableFuture<Lobby> getLobby() {
-		return this.internal.performRequest(Request.Action.GET_LOBBY, null).thenApply(t -> gson.fromJson(t, Lobby.class));
+		return this.internal.performRequest(RequestActions.GET_LOBBY, null).thenApply(t -> gson.fromJson(t, Lobby.class));
 	}
 
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<?> setColour(Colour colour) {
 		String value = (colour == null) ? Server.undecidedColour : colour.toString();
-		return this.internal.performRequest(Request.Action.SET_COLOUR, value);
+		return this.internal.performRequest(RequestActions.SET_COLOUR, value);
 	}
 
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<?> setReady(Boolean ready) {
-		return this.internal.performRequest(Request.Action.SET_READY, ready.toString());
+		return this.internal.performRequest(RequestActions.SET_READY, ready.toString());
 	}
 
-	private void didReceiveNotification(Notification.NotificationName name, String content) {
-		switch (name) {
+	private void didReceiveNotification(String name, String content) {
+		NotificationNames type = Arrays.stream(NotificationNames.values()).filter(v -> v.toString().equals(name)).findAny().orElse(null);
+		if (type == null) return;
+		switch (type) {
 			case LOBBY_UPDATE:
 				Lobby lobby = gson.fromJson(content, Lobby.class);
 				this.tellObservers(o -> o.onLobbyChange(lobby));
@@ -87,12 +91,12 @@ public class Client {
 			super(uri, headers);
 		}
 
-		CompletableFuture<String> performRequest(Request.Action action, String data) {
+		CompletableFuture<String> performRequest(Object action, String data) {
 			CompletableFuture<String> future = new CompletableFuture<>();
 			Request request = new Request();
 			request.streamID = this.streamIDCounter.next();
 			request.data = data;
-			request.action = action;
+			request.action = action.toString();
 			this.pendingRequests.put(request.streamID, future);
 			this.send(Client.this.gson.toJson(request));
 			return future;

@@ -1,7 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.controller;
 
 import com.google.gson.Gson;
-import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -84,15 +83,6 @@ public final class MLGLobby implements Controller, Observer {
 		List<Colour> items = new ArrayList<>();
 		items.add(null);	//Add the undecided choice
 		this.colourChoice.setItems(FXCollections.observableList(items));
-
-		//Get the current lobby
-		config.client.getLobby().whenComplete((result, error) -> {
-			Platform.runLater(() -> {
-				if (error == null) {
-					this.onLobbyChange(result);
-				}
-			});
-		});
 	}
 
 	@Override
