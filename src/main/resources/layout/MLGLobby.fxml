@@ -18,11 +18,11 @@
             <Label fx:id="serverNameLabel" text="Server Name:" />
             <Label fx:id="maxPlayersLabel" layoutX="10.0" layoutY="10.0" text="Max Players:" />
             <Label fx:id="turnTimerLabel" layoutX="10.0" layoutY="26.0" text="Turn timer:" />
-            <TableView prefHeight="200.0" prefWidth="200.0">
+            <TableView fx:id="tableView" prefHeight="200.0" prefWidth="200.0">
               <columns>
-                <TableColumn prefWidth="75.0" sortable="false" text="Name" />
-                <TableColumn prefWidth="75.0" sortable="false" text="Colour" />
-                  <TableColumn prefWidth="75.0" sortable="false" text="Ready" />
+                <TableColumn fx:id="nameColumn" prefWidth="200.0" sortable="false" text="Name" />
+                <TableColumn fx:id="colourColumn" prefWidth="150.0" sortable="false" text="Colour" />
+                  <TableColumn fx:id="readyColumn" prefWidth="100.0" sortable="false" text="Ready" />
               </columns>
             </TableView>
             <VBox alignment="CENTER">
@@ -32,7 +32,7 @@
                         <HBox maxWidth="1.7976931348623157E308" spacing="10.0">
                            <children>
                               <Label maxWidth="1.7976931348623157E308" text="Your colour" />
-                              <ChoiceBox prefWidth="200.0" />
+                              <ChoiceBox fx:id="colourChoice" prefWidth="200.0" />
                            </children>
                         </HBox>
                         <ToggleButton fx:id="readyButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Ready" />

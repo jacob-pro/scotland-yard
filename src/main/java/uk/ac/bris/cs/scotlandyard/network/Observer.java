@@ -1,7 +1,7 @@
-package uk.ac.bris.cs.scotlandyard.server;
+package uk.ac.bris.cs.scotlandyard.network;
 
 import uk.ac.bris.cs.scotlandyard.model.Spectator;
-import uk.ac.bris.cs.scotlandyard.server.messaging.Lobby;
+import uk.ac.bris.cs.scotlandyard.network.model.Lobby;
 
 public interface Observer extends Spectator {
 
@@ -15,5 +15,8 @@ public interface Observer extends Spectator {
 
 	//When a player is requested to make a move
 	default void onMoveRequested() {}
+
+	//When something is wrong with the connection
+	default void onConnectionError(ConnectionException e) {}
 
 }

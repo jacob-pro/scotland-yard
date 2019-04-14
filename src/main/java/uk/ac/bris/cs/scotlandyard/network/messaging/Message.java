@@ -1,6 +1,6 @@
-package uk.ac.bris.cs.scotlandyard.server.messaging;
+package uk.ac.bris.cs.scotlandyard.network.messaging;
 
-//An abstract class that represents the different types of messages that form the server protocol
+//An abstract class that represents the different types of messages that form the network protocol
 abstract public class Message {
 
 	enum MessageType {

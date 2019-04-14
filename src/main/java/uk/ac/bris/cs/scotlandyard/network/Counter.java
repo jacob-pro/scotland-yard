@@ -1,4 +1,4 @@
-package uk.ac.bris.cs.scotlandyard.server;
+package uk.ac.bris.cs.scotlandyard.network;
 
 class Counter {
 

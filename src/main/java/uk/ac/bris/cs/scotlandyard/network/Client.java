@@ -1,11 +1,13 @@
-package uk.ac.bris.cs.scotlandyard.server;
+package uk.ac.bris.cs.scotlandyard.network;
 
 import com.google.gson.Gson;
 import javafx.application.Platform;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
-import uk.ac.bris.cs.scotlandyard.server.messaging.*;
+import uk.ac.bris.cs.scotlandyard.network.messaging.*;
+import uk.ac.bris.cs.scotlandyard.network.model.Lobby;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -18,6 +20,7 @@ public class Client {
 	private MLGConnectionInternal internal;
 	private Gson gson = new Gson();
 	private Join joinMessage;
+	private boolean gameOver = false;
 
 	public Client(String hostname, Integer port, String username) throws URISyntaxException {
 		URI uri = new URI("ws://" + hostname + ":" + port.toString());
@@ -36,10 +39,13 @@ public class Client {
 		return this.internal.performRequest(Request.Action.GET_LOBBY, null).thenApply(t -> gson.fromJson(t, Lobby.class));
 	}
 
+	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<?> setColour(Colour colour) {
-		return this.internal.performRequest(Request.Action.SET_COLOUR, colour.toString());
+		String value = (colour == null) ? Server.undecidedColour : colour.toString();
+		return this.internal.performRequest(Request.Action.SET_COLOUR, value);
 	}
 
+	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<?> setReady(Boolean ready) {
 		return this.internal.performRequest(Request.Action.SET_READY, ready.toString());
 	}
@@ -63,6 +69,7 @@ public class Client {
 				this.tellObservers(o -> o.onRotationComplete(null));
 				break;
 			case GAME_OVER:
+				this.gameOver = true;
 				break;
 		}
 	}
@@ -100,7 +107,7 @@ public class Client {
 					if (message.error == null) {
 						MLGConnectionInternal.this.connectFuture.complete(message);
 					} else {
-						MLGConnectionInternal.this.connectFuture.completeExceptionally(new MLGConnectionException(message.error.toString()));
+						MLGConnectionInternal.this.connectFuture.completeExceptionally(new ConnectionException(message.error.toString()));
 					}
 				}
 				@Override
@@ -124,15 +131,12 @@ public class Client {
 
 		@Override
 		public void onError(Exception e) {
-			// If the error occurs on creation we will fail the creation promise e.g. couldn't connect to the server
-			// I don't know what errors are possible later on, other than disconnection?
-			// If so just throw a runtime exception on main thread
+			// If the error occurs on creation we will fail the creation promise e.g. couldn't connect to the network
+			// I don't really know what sort of errors are possible later on, other than disconnection?
 			if(!this.connectFuture.isDone()) {
-				this.connectFuture.completeExceptionally(new MLGConnectionException(e));
+				this.connectFuture.completeExceptionally(new ConnectionException(e));
 			} else {
-				Platform.runLater(() -> {
-					throw new MLGConnectionException(e);
-				});
+				Platform.runLater(() -> Client.this.tellObservers(o -> o.onConnectionError(new ConnectionException(e))));
 			}
 		}
 
@@ -142,18 +146,13 @@ public class Client {
 
 		@Override
 		public void onClose(int code, String reason, boolean remote) {
+			if(remote && !Client.this.gameOver) {
+				System.out.println("closed");
+				Client.this.tellObservers(o -> o.onConnectionError(new ConnectionException("Connection closed unexpectedly")));
+			}
 		}
 	}
 
-	@SuppressWarnings("serial")
-	public static class MLGConnectionException extends RuntimeException {
-		MLGConnectionException(Exception e) {
-			super(e);
-		}
-		MLGConnectionException(String s) {
-			super(s);
-		}
-	}
 
 	private void tellObservers(Consumer<Observer> tell) {
 		Platform.runLater(() -> this.observers.forEach(tell));

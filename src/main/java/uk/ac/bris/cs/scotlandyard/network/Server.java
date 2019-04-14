@@ -1,4 +1,4 @@
-package uk.ac.bris.cs.scotlandyard.server;
+package uk.ac.bris.cs.scotlandyard.network;
 
 import com.google.gson.Gson;
 import javafx.collections.FXCollections;
@@ -8,7 +8,9 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
 import uk.ac.bris.cs.scotlandyard.model.*;
-import uk.ac.bris.cs.scotlandyard.server.messaging.*;
+import uk.ac.bris.cs.scotlandyard.network.messaging.*;
+import uk.ac.bris.cs.scotlandyard.network.model.Lobby;
+import uk.ac.bris.cs.scotlandyard.network.model.LobbyPlayer;
 import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 import uk.ac.bris.cs.scotlandyard.ui.model.PlayerProperty;
 
@@ -23,7 +25,7 @@ import static java.util.stream.Collectors.toList;
 
 public class Server implements Spectator, Player {
 
-	//Creates a server and waits for it to start
+	//Creates a network and waits for it to start
 	public static Future<Server> CreateMLGServer(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
 		Server server = new Server(manager, address, maxPlayers, turnTimer, serverName);
 		server.internal.start();
@@ -48,6 +50,7 @@ public class Server implements Spectator, Player {
 	}
 
 	static String protocolVersionString = "1.0";
+	static String undecidedColour = "null";
 	private ScotlandYardGame model = null;
 	private int maxPlayers;
 	private Integer turnTimer;
@@ -76,8 +79,8 @@ public class Server implements Spectator, Player {
 					break;
 				case SET_COLOUR:
 					try {
-						Colour colour = Colour.valueOf(request.data);
-						if (this.players.stream().anyMatch(p -> p.colour == colour)){
+						Colour colour = (request.data.equals(undecidedColour) ? null : Colour.valueOf(request.data));
+						if (colour != null && this.players.stream().anyMatch(p -> p.colour == colour)){
 							response.error = "Colour taken";
 						} else {
 							player.colour = colour;
@@ -113,7 +116,6 @@ public class Server implements Spectator, Player {
 
 	private Lobby currentLobby() {
 		Lobby lobby = new Lobby();
-		lobby.startTime = null;
 		lobby.players = this.players.stream().map(p -> {
 			LobbyPlayer player = new LobbyPlayer();
 			player.colour = p.colour;

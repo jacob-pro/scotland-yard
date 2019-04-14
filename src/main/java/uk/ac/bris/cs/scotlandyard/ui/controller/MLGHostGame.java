@@ -7,8 +7,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
-import uk.ac.bris.cs.scotlandyard.server.Client;
-import uk.ac.bris.cs.scotlandyard.server.Server;
+import uk.ac.bris.cs.scotlandyard.network.Client;
+import uk.ac.bris.cs.scotlandyard.network.Server;
 import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 
