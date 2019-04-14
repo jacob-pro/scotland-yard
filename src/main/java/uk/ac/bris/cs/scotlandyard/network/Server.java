@@ -9,10 +9,7 @@ import org.java_websocket.server.WebSocketServer;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
 import uk.ac.bris.cs.scotlandyard.model.*;
 import uk.ac.bris.cs.scotlandyard.network.messaging.*;
-import uk.ac.bris.cs.scotlandyard.network.model.Lobby;
-import uk.ac.bris.cs.scotlandyard.network.model.LobbyPlayer;
-import uk.ac.bris.cs.scotlandyard.network.model.NotificationNames;
-import uk.ac.bris.cs.scotlandyard.network.model.RequestActions;
+import uk.ac.bris.cs.scotlandyard.network.model.*;
 import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 import uk.ac.bris.cs.scotlandyard.ui.model.PlayerProperty;
 
@@ -70,42 +67,64 @@ public class Server implements Spectator, Player {
 		this.internal = new MLGServerInternal(address);
 	}
 
+	private String handlePlayerJoin(ClientHandshake clientHandshake, WebSocket conn) throws Exception {
+		//Check that the player is able to join
+		if (this.model != null) throw new Exception(JoinErrors.GAME_STARTED.toString());
+		if (this.players.size() >= this.maxPlayers) throw new Exception(JoinErrors.SERVER_FULL.toString());
+		if (!clientHandshake.getFieldValue("Version").equals(Server.protocolVersionString))
+			throw new Exception(JoinErrors.VERSION_MISMATCH.toString());
+
+		//Create the player
+		ServerPlayer player = new ServerPlayer(conn, clientHandshake.getFieldValue("Username"));
+		this.players.add(player);
+
+		//Fill the join message
+		Join join = new Join();
+		join.serverName = Server.this.serverName;
+		join.maxPlayers = Server.this.maxPlayers;
+		join.turnTimer = Server.this.turnTimer;
+		join.playerID = player.id;
+
+		//Notify players that someone is joining
+		this.sendLobbyUpdateToAll();
+		return gson.toJson(join);
+	}
+
 	private void handleRequest(Request request, Response response, ServerPlayer player) {
-		if (request.action == null) {
+		RequestActions action = Arrays.stream(RequestActions.values()).filter(v -> v.toString().equals(request.action)).findAny().orElse(null);
+		if (action == null) {
 			response.error = "Unknown action";
-		} else {
-			RequestActions action = Arrays.stream(RequestActions.values()).filter(v -> v.toString().equals(request.action)).findAny().orElse(null);
-			if (action == null) return;
-			switch (action) {
-				case GET_LOBBY:
-					Lobby lobby = this.currentLobby();
-					response.data = this.gson.toJson(lobby);
-					break;
-				case SET_COLOUR:
-					try {
-						Colour colour = (request.data.equals(undecidedColour) ? null : Colour.valueOf(request.data));
-						if (colour != null && this.players.stream().anyMatch(p -> p.colour == colour)){
-							response.error = "Colour taken";
-						} else {
-							player.colour = colour;
-							this.sendLobbyUpdateToAll();
-						}
-					} catch (IllegalArgumentException e) {
-						response.error = "Illegal colour";
-					}
-					break;
-				case SET_READY:
-					try {
-						player.ready = Boolean.valueOf(request.data);
-						response.data = "Success";
+			return;
+		}
+		switch (action) {
+			case GET_LOBBY:
+				Lobby lobby = this.currentLobby();
+				response.data = this.gson.toJson(lobby);
+				break;
+			case SET_COLOUR:
+				try {
+					Colour colour = (request.data.equals(undecidedColour) ? null : Colour.valueOf(request.data));
+					if (colour != null && this.players.stream().anyMatch(p -> p.colour == colour)){
+						response.error = "Colour taken";
+					} else {
+						player.colour = colour;
 						this.sendLobbyUpdateToAll();
-					} catch (IllegalArgumentException e) {
-						response.error = "Illegal value";
 					}
-					break;
-				case MAKE_MOVE:
-					break;
-			}
+				} catch (IllegalArgumentException e) {
+					response.error = "Illegal colour";
+				}
+				break;
+			case SET_READY:
+				try {
+					player.ready = Boolean.valueOf(request.data);
+					response.data = "Success";
+					this.sendLobbyUpdateToAll();
+				} catch (IllegalArgumentException e) {
+					response.error = "Illegal value";
+				}
+				break;
+			case MAKE_MOVE:
+				break;
 		}
 	}
 
@@ -191,38 +210,15 @@ public class Server implements Spectator, Player {
 
 		@Override
 		public void onOpen(WebSocket conn, ClientHandshake handshake) {
-
-			//Create a JOIN message
-			Join join = new Join();
-
-			if (Server.this.model != null) {
-				join.error = Join.Error.GAME_STARTED;
-				conn.send(gson.toJson(join));
+			Handshake response = new Handshake();
+			try {
+				response.data = Server.this.handlePlayerJoin(handshake, conn);
+				conn.send(gson.toJson(response));
+			} catch (Exception e) {
+				response.error = e.getMessage();
+				conn.send(gson.toJson(response));
 				conn.close();
 			}
-			if (Server.this.players.size() >= Server.this.maxPlayers) {
-				join.error = Join.Error.SERVER_FULL;
-				conn.send(gson.toJson(join));
-				conn.close();
-			}
-			if (!handshake.getFieldValue("Version").equals(Server.protocolVersionString)) {
-				join.error = Join.Error.VERSION_MISMATCH;
-				conn.send(gson.toJson(join));
-				conn.close();
-			}
-
-			//Create the player
-			ServerPlayer player = new ServerPlayer(conn, handshake.getFieldValue("Username"));
-			Server.this.players.add(player);
-
-			//Fill the join message
-			join.serverName = Server.this.serverName;
-			join.maxPlayers = Server.this.maxPlayers;
-			join.turnTimer = Server.this.turnTimer;
-			join.playerID = player.id;
-
-			conn.send(gson.toJson(join));
-			Server.this.sendLobbyUpdateToAll();
 		}
 
 		@Override

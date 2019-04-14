@@ -6,6 +6,7 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
 import uk.ac.bris.cs.scotlandyard.network.messaging.*;
+import uk.ac.bris.cs.scotlandyard.network.model.Join;
 import uk.ac.bris.cs.scotlandyard.network.model.Lobby;
 import uk.ac.bris.cs.scotlandyard.network.model.NotificationNames;
 import uk.ac.bris.cs.scotlandyard.network.model.RequestActions;
@@ -34,7 +35,11 @@ public class Client {
 
 	public CompletableFuture<Join> connect() {
 		this.internal.connect();
-		return this.internal.connectFuture;
+		return this.internal.connectFuture.thenApply(t -> {
+			Join join = gson.fromJson(t.data, Join.class);
+			this.joinMessage = join;
+			return join;
+		});
 	}
 
 	public CompletableFuture<Lobby> getLobby() {
@@ -84,7 +89,7 @@ public class Client {
 		private Counter streamIDCounter = new Counter();
 		private Map<Integer, CompletableFuture<String>> pendingRequests = new HashMap<>();
 
-		private CompletableFuture<Join> connectFuture = new CompletableFuture<>();
+		private CompletableFuture<Handshake> connectFuture = new CompletableFuture<>();
 		private MessageDeserializer messageDeserializer = new MessageDeserializer();
 
 		MLGConnectionInternal(URI uri, Map<String,String> headers) {
@@ -106,12 +111,11 @@ public class Client {
 		public void onMessage(String string) {
 			this.messageDeserializer.deserialize(string).ifPresent(m -> m.accept(new MessageVisitor() {
 				@Override
-				public void accept(Join message) {
-					Client.this.joinMessage = message;
+				public void accept(Handshake message) {
 					if (message.error == null) {
 						MLGConnectionInternal.this.connectFuture.complete(message);
 					} else {
-						MLGConnectionInternal.this.connectFuture.completeExceptionally(new ConnectionException(message.error.toString()));
+						MLGConnectionInternal.this.connectFuture.completeExceptionally(new ConnectionException(message.error));
 					}
 				}
 				@Override
@@ -151,12 +155,10 @@ public class Client {
 		@Override
 		public void onClose(int code, String reason, boolean remote) {
 			if(remote && !Client.this.gameOver) {
-				System.out.println("closed");
 				Client.this.tellObservers(o -> o.onConnectionError(new ConnectionException("Connection closed unexpectedly")));
 			}
 		}
 	}
-
 
 	private void tellObservers(Consumer<Observer> tell) {
 		Platform.runLater(() -> this.observers.forEach(tell));

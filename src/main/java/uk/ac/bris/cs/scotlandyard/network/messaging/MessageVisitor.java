@@ -2,7 +2,7 @@ package uk.ac.bris.cs.scotlandyard.network.messaging;
 
 public interface MessageVisitor {
 
-	default void accept(Join message) {}
+	default void accept(Handshake message) {}
 
 	default void accept(Request message) {}
 

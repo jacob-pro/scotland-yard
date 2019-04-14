@@ -11,7 +11,7 @@ public class MessageDeserializer {
 
 	private static final RuntimeTypeAdapterFactory<Message> typeFactory = RuntimeTypeAdapterFactory
 			.of(Message.class, "messageType")
-			.registerSubtype(Join.class, Message.MessageType.JOIN.toString())
+			.registerSubtype(Handshake.class, Message.MessageType.HANDSHAKE.toString())
 			.registerSubtype(Request.class, Message.MessageType.REQUEST.toString())
 			.registerSubtype(Response.class, Message.MessageType.RESPONSE.toString())
 			.registerSubtype(Notification.class, Message.MessageType.NOTIFICATION.toString());

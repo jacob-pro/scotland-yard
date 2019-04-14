@@ -4,7 +4,7 @@ package uk.ac.bris.cs.scotlandyard.network.messaging;
 abstract public class Message {
 
 	enum MessageType {
-		JOIN, 			//Part of the connection handshake
+		HANDSHAKE, 		//Part of the connection handshake
 		REQUEST, 		//A request that is sent, a matching response is required
 		RESPONSE, 		//A response for a request.
 		NOTIFICATION	//A one way notification, no response is required

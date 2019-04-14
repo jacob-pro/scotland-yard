@@ -1,6 +1,7 @@
 package uk.ac.bris.cs.scotlandyard.ui.controller;
 
 import com.google.gson.Gson;
+import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -14,7 +15,7 @@ import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
 import uk.ac.bris.cs.scotlandyard.network.ConnectionException;
 import uk.ac.bris.cs.scotlandyard.network.Observer;
-import uk.ac.bris.cs.scotlandyard.network.messaging.Join;
+import uk.ac.bris.cs.scotlandyard.network.model.Join;
 import uk.ac.bris.cs.scotlandyard.network.model.Lobby;
 import uk.ac.bris.cs.scotlandyard.network.model.LobbyPlayer;
 import uk.ac.bris.cs.scotlandyard.ui.Utils;
@@ -83,6 +84,15 @@ public final class MLGLobby implements Controller, Observer {
 		List<Colour> items = new ArrayList<>();
 		items.add(null);	//Add the undecided choice
 		this.colourChoice.setItems(FXCollections.observableList(items));
+
+		//Fetch the lobby
+		this.config.client.getLobby().whenComplete((result, error) -> {
+			Platform.runLater(() -> {
+				if (error == null) {
+					this.onLobbyChange(result);
+				}
+			});
+		});
 	}
 
 	@Override
@@ -96,9 +106,6 @@ public final class MLGLobby implements Controller, Observer {
 			if (!this.colourChoice.getItems().contains(c)) this.colourChoice.getItems().add(c);
 		});
 		this.tableView.getItems().setAll(lobby.players);
-
-		Gson gson = new Gson();
-		System.out.println(gson.toJson(lobby));
 	}
 
 	@Override
