@@ -6,10 +6,11 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane fx:id="root" styleClass="mlg-config-screen" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1">
+<StackPane fx:id="root" styleClass="mlg-config-screen" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <VBox alignment="CENTER" styleClass="mlg-config-vbox">
          <children>
+            <TextField fx:id="nameField" alignment="CENTER" layoutX="10.0" layoutY="10.0" promptText="Username" />
             <TextField fx:id="addressField" alignment="CENTER" promptText="Server Address" text="localhost" />
             <Button fx:id="joinButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Join" />
             <Button fx:id="cancelButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Cancel" />

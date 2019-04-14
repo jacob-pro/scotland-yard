@@ -9,6 +9,7 @@ import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.server.Client;
 import uk.ac.bris.cs.scotlandyard.server.Server;
+import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 
 import java.net.InetSocketAddress;
@@ -49,7 +50,16 @@ public final class MLGHostGame implements Controller {
 	}
 
 	private void hostButtonAction(ActionEvent event) {
-		int port = Integer.parseInt(this.portField.getText());
+
+		int port;
+		try {
+			port = Integer.parseInt(this.portField.getText());
+			if (port < 1024 || port > 49151) throw new RuntimeException("Port outside valid range");
+		} catch (RuntimeException e) {
+			Utils.handleNonFatalException(e, "Invalid port");
+			return;
+		}
+
 		int maxPlayers = (int) this.maxPlayersSlider.getValue();
 		Integer turnTimer = this.turnTimerCheckBox.isSelected() ? Integer.valueOf(this.turnTimerField.getText()): null;
 		String localhost = "localhost";
@@ -61,9 +71,12 @@ public final class MLGHostGame implements Controller {
 			config.server = Server.CreateMLGServer(this.startScreen.getManager(), address, maxPlayers, turnTimer, this.serverName.getText()).get();
 			config.client = new Client(localhost, port, "Host");
 			config.client.connect().get();
-		} catch (InterruptedException | ExecutionException | URISyntaxException e) {
+		} catch (InterruptedException | URISyntaxException e) {
+			Utils.handleFatalException(e);
+			return;
+		} catch (ExecutionException e) {
+			Utils.handleNonFatalException(e, "Couldn't start server");
 			config.cleanUp();
-			e.printStackTrace();
 			return;
 		}
 

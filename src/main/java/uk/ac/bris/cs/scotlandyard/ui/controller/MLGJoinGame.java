@@ -11,6 +11,7 @@ import javafx.scene.layout.VBox;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.server.Client;
+import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 
 import java.net.URISyntaxException;
@@ -19,6 +20,7 @@ import java.net.URISyntaxException;
 public final class MLGJoinGame implements Controller {
 
 	@FXML private StackPane root;
+	@FXML private TextField nameField;
 	@FXML private TextField addressField;
 	@FXML private Button joinButton;
 	@FXML private Button cancelButton;
@@ -40,35 +42,54 @@ public final class MLGJoinGame implements Controller {
 
 	private void joinButtonAction(ActionEvent event) {
 
-		String text = this.addressField.getText();
+		String address = this.addressField.getText();
+		String username = this.nameField.getText();
+
+		if (username.isEmpty()) {
+			Utils.handleNonFatalException(new RuntimeException("Username is required"), "Username is required");
+			return;
+		}
+		if (address.isEmpty()) {
+			Utils.handleNonFatalException(new RuntimeException("Address is required"), "Address is required");
+			return;
+		}
+
 		int port;
 		String host;
-		if (text.contains(":")) {
-			host = text.substring(0, text.lastIndexOf(":"));
-			port = Integer.parseInt(text.substring(text.lastIndexOf(":")+1, text.length()));
+		if (address.contains(":")) {
+			host = address.substring(0, address.lastIndexOf(":"));
+			try {
+				port = Integer.parseInt(address.substring(address.lastIndexOf(":")+1, address.length()));
+			} catch (NumberFormatException e) {
+				Utils.handleNonFatalException(e, "Invalid address");
+				return;
+			}
 		} else {
-			host = text;
+			host = address;
 			port = MLGHostGame.defaultPort;
 		}
 
 		MLGModel config = new MLGModel();
 		try {
-			config.client = new Client(host, port, "client");
+			config.client = new Client(host, port, this.nameField.getText());
 		} catch (URISyntaxException e) {
+			Utils.handleNonFatalException(e, "Invalid address");
 			config.cleanUp();
-			e.printStackTrace();
 			return;
 		}
 
+		//Show progress spinner
 		this.progress.setVisible(true);
-		config.client.connect().whenComplete((result, exception) -> {
+		config.client.connect().whenComplete((result, error) -> {
 			Platform.runLater(() -> {
+				//Hide spinner
 				this.progress.setVisible(false);
 				if (result != null) {
 					MLGLobby lobby = new MLGLobby(this.startScreen, config);
 					this.startScreen.pushController(lobby);
 				} else {
-					exception.printStackTrace();
+					Utils.handleNonFatalException(error, "Connection error");
+					config.cleanUp();
 				}
 			});
 		});
