@@ -1,9 +1,8 @@
 package uk.ac.bris.cs.scotlandyard.multiplayer;
 
-import uk.ac.bris.cs.scotlandyard.model.Spectator;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.Lobby;
 
-public interface Observer extends Spectator {
+public interface Observer {
 
 	//All the calls will be made from the JavaFX main thread to simulate the standard model behaviour
 

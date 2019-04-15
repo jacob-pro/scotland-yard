@@ -139,7 +139,7 @@ public final class MLGLobby implements Controller, Observer {
 
 	@Override
 	public void onClientError(RuntimeException e) {
-		this.startScreen.getGame().handleFatalException(e, this.config);
+		MLGGame.handleFatalException(e, this.config);
 	}
 
 	private void exitButtonAction(ActionEvent event) {

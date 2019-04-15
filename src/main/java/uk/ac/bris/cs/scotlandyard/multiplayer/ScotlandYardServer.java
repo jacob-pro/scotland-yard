@@ -145,6 +145,9 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 				break;
 			case MAKE_MOVE:
 				break;
+			case GET_TICKETS:
+				TicketRequest get = this.gson.fromJson(request.data, TicketRequest.class);
+				response.data = this.model.getPlayerTickets(get.colour, get.ticket).orElse(0).toString();
 		}
 	}
 
@@ -180,7 +183,7 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 		if (this.players.stream().allMatch(p -> p.ready) && this.players.stream().filter(p -> p.colour != null ).count() >= 2
 				&& this.players.stream().anyMatch(p -> p.colour == Colour.BLACK)) {
 			Calendar cal = Calendar.getInstance();
-			cal.add(Calendar.SECOND, 11);
+			cal.add(Calendar.SECOND, 3);
 			this.startTime = cal.getTime();
 			this.timer = new Timer();
 			this.timer.schedule(
@@ -228,7 +231,9 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 
 	public void onGameOver(ScotlandYardView view, Set<Colour> winningPlayers) {
 		Notification notification = new Notification(NotificationNames.GAME_OVER.toString());
-		notification.content = gson.toJson(winningPlayers);
+		GameOver gameOver = new GameOver();
+		gameOver.winningPlayers = winningPlayers;
+		notification.content = gson.toJson(gameOver);
 		this.sendNotificationToAll(notification);
 	}
 
@@ -239,31 +244,12 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 		Notification notification = new Notification(NotificationNames.MOVE_REQUEST.toString());
 	}
 
-
-	// Code below is copied from GameSetup - Use random locations for all players
-	@SuppressWarnings("Duplicates")
+	@SuppressWarnings("Duplicates")		//Some of this is copied from GameSetup
 	private void startGame() {
 
+		//Find enabled colours and create ModelProperty
 		Set<Colour> enabledColours = this.players.stream().map(p -> p.colour).collect(Collectors.toSet());
-
-		ModelProperty defaults = ModelProperty.createDefault(this.manager);
-		ObservableList<PlayerProperty> enabledPlayers = FXCollections.observableArrayList(defaults.allPlayers().stream()
-				.filter(p -> enabledColours.contains(p.colour())).collect(toList()));
-
-		ArrayList<Integer> availableLocation = new ArrayList<>(StandardGame.DETECTIVE_LOCATIONS);
-		Collections.shuffle(availableLocation);
-		ArrayDeque<Integer> deque = new ArrayDeque<>(availableLocation);
-		enabledPlayers.forEach(p -> p.locationProperty().unbind());
-		enabledPlayers.filtered(PlayerProperty::randomLocation).forEach(p -> {
-			if (p.mrX()) {
-				p.locationProperty().set(StandardGame.MRX_LOCATIONS
-						.get(new Random().nextInt(StandardGame.MRX_LOCATIONS.size())));
-			} else {
-				p.locationProperty().set(deque.pop());
-			}
-		});
-
-		ModelProperty setup = new ModelProperty(null, defaults.revealRounds(), enabledPlayers, defaults.graphProperty().get());
+		ModelProperty setup = ModelPropertyGenerator.randomisedLocations(ModelPropertyGenerator.modelPropertyForColours(this.manager, enabledColours));
 
 		List<PlayerConfiguration> configs = setup.players().stream()
 				.map(p -> new PlayerConfiguration.Builder(p.colour())
@@ -279,6 +265,10 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 		this.model = new ScotlandYardModel(setup.revealRounds(), setup.graphProperty().get(), mrX, detectives.get(0), detectives.stream().skip(1).toArray(PlayerConfiguration[]::new));
 
 		Notification notification = new Notification(NotificationNames.GAME_START.toString());
+		GameStart gameStart = new GameStart();
+		gameStart.players = model.getPlayers();
+		gameStart.rounds = model.getRounds();
+		notification.content = gson.toJson(gameStart);
 		this.sendNotificationToAll(notification);
 
 		model.registerSpectator(this);

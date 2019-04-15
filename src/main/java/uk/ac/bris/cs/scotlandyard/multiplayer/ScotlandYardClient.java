@@ -2,26 +2,30 @@ package uk.ac.bris.cs.scotlandyard.multiplayer;
 
 import com.google.gson.Gson;
 import javafx.application.Platform;
-import uk.ac.bris.cs.scotlandyard.model.Colour;
+import org.checkerframework.checker.nullness.Opt;
+import uk.ac.bris.cs.gamekit.graph.Graph;
+import uk.ac.bris.cs.scotlandyard.model.*;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.*;
 import uk.ac.bris.cs.scotlandyard.multiplayer.network.*;
-import uk.ac.bris.cs.scotlandyard.multiplayer.model.Join;
-import uk.ac.bris.cs.scotlandyard.multiplayer.model.Lobby;
-import uk.ac.bris.cs.scotlandyard.multiplayer.model.NotificationNames;
-import uk.ac.bris.cs.scotlandyard.multiplayer.model.RequestActions;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-public class ScotlandYardClient implements ClientDelegate {
+public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 
 	private CompletableFuture<Join> connectFuture = new CompletableFuture<>();
 	private Set<Observer> observers = new HashSet<>();
+	private Set<Spectator> spectators = new HashSet<>();
 	private Client client;
 	private Gson gson = new Gson();
-	private boolean gameOver = false;
+
 	private Join joinMessage;
+	private GameStart gameStart;
+	private GameOver gameOver;
 
 	public ScotlandYardClient(String hostname, int port, String username) throws URISyntaxException {
 		URI uri = new URI("ws://" + hostname + ":" + port);
@@ -72,6 +76,7 @@ public class ScotlandYardClient implements ClientDelegate {
 				this.tellObservers(o -> o.onLobbyChange(lobby));
 				break;
 			case GAME_START:
+				this.gameStart = gson.fromJson(content, GameStart.class);
 				this.tellObservers(Observer::onGameStarted);
 				break;
 			case MOVE_REQUEST:
@@ -81,10 +86,11 @@ public class ScotlandYardClient implements ClientDelegate {
 			case ROUND_STARTED:
 				break;
 			case ROTATION_COMPLETE:
-				this.tellObservers(o -> o.onRotationComplete(null));
+				this.tellSpectators(o -> o.onRotationComplete(null));
 				break;
 			case GAME_OVER:
-				this.gameOver = true;
+				this.gameOver = gson.fromJson(content, GameOver.class);
+				this.tellSpectators(o -> o.onGameOver(null, this.getWinningPlayers()));
 				break;
 		}
 	}
@@ -96,13 +102,17 @@ public class ScotlandYardClient implements ClientDelegate {
 
 	@Override
 	public void clientWasDisconnected(Client c) {
-		if (!gameOver) {
+		if (this.gameOver == null) {
 			this.tellObservers(o -> o.onClientError(new RuntimeException("Connection closed unexpectedly")));
 		}
 	}
 
 	private void tellObservers(Consumer<Observer> tell) {
 		Platform.runLater(() -> this.observers.forEach(tell));
+	}
+
+	private void tellSpectators(Consumer<Spectator> tell) {
+		Platform.runLater(() -> this.spectators.forEach(tell));
 	}
 
 	public void registerObserver(Observer observer) {
@@ -124,6 +134,81 @@ public class ScotlandYardClient implements ClientDelegate {
 		} catch (InterruptedException ignored) {
 
 		}
+	}
+
+	@Override
+	public List<Colour> getPlayers() {
+		if (this.gameStart == null) throw new RuntimeException("Game must be started");
+		return this.gameStart.players;
+	}
+
+	@Override
+	public Set<Colour> getWinningPlayers() {
+		if (this.gameOver == null) return Collections.emptySet();
+		return this.gameOver.winningPlayers;
+	}
+
+	@Override
+	public Optional<Integer> getPlayerLocation(Colour colour) {
+		return Optional.empty();
+	}
+
+	@Override
+	public Optional<Integer> getPlayerTickets(Colour colour, Ticket ticket) {
+		TicketRequest request = new TicketRequest(colour, ticket);
+		try {
+			String result = this.client.performRequest(RequestActions.GET_TICKETS.toString(), gson.toJson(request)).get();
+			return Optional.of(Integer.parseInt(result));
+		} catch (InterruptedException | ExecutionException | NumberFormatException e) {
+			this.tellObservers(o -> o.onClientError(new RuntimeException(e)));
+			return Optional.empty();
+		}
+	}
+
+	@Override
+	public boolean isGameOver() {
+		return (this.gameOver != null);
+	}
+
+	@Override
+	public Colour getCurrentPlayer() {
+		return this.gameStart.players.get(0);
+	}
+
+	@Override
+	public int getCurrentRound() {
+		return 0;
+	}
+
+	@Override
+	public List<Boolean> getRounds() {
+		if (this.gameStart == null) throw new RuntimeException("Game must be started");
+		return this.gameStart.rounds;
+	}
+
+	@Override
+	public Graph<Integer, Transport> getGraph() {
+		throw new RuntimeException("Unsupported");
+	}
+
+	@Override
+	public void startRotate() {
+		throw new RuntimeException("Unsupported");
+	}
+
+	@Override
+	public void registerSpectator(Spectator spectator) {
+		this.spectators.add(spectator);
+	}
+
+	@Override
+	public void unregisterSpectator(Spectator spectator) {
+		this.spectators.remove(spectator);
+	}
+
+	@Override
+	public Collection<Spectator> getSpectators() {
+		return Collections.unmodifiableSet(this.spectators);
 	}
 
 }
