@@ -170,7 +170,7 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 	}
 
 	private void sendLobbyUpdateToAll() {
-		Notification notification = new Notification(NotificationNames.LOBBY_UPDATE);
+		Notification notification = new Notification(NotificationNames.LOBBY_UPDATE.toString());
 		notification.content = gson.toJson(ScotlandYardServer.this.currentLobby());
 		this.sendNotificationToAll(notification);
 	}
@@ -183,23 +183,23 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 	@Override
 	public void onRotationComplete(ScotlandYardView view) {
 		if (!view.isGameOver()) this.model.startRotate();
-		Notification notification = new Notification(NotificationNames.ROTATION_COMPLETE);
+		Notification notification = new Notification(NotificationNames.ROTATION_COMPLETE.toString());
 		this.sendNotificationToAll(notification);
 	}
 
 	public void onMoveMade(ScotlandYardView view, Move move) {
-		Notification notification = new Notification(NotificationNames.MOVE_MADE);
+		Notification notification = new Notification(NotificationNames.MOVE_MADE.toString());
 		this.sendNotificationToAll(notification);
 	}
 
 	public void onRoundStarted(ScotlandYardView view, int round) {
-		Notification notification = new Notification(NotificationNames.ROUND_STARTED);
+		Notification notification = new Notification(NotificationNames.ROUND_STARTED.toString());
 		notification.content = String.valueOf(round);
 		this.sendNotificationToAll(notification);
 	}
 
 	public void onGameOver(ScotlandYardView view, Set<Colour> winningPlayers) {
-		Notification notification = new Notification(NotificationNames.GAME_OVER);
+		Notification notification = new Notification(NotificationNames.GAME_OVER.toString());
 		notification.content = gson.toJson(winningPlayers);
 		this.sendNotificationToAll(notification);
 	}
@@ -208,7 +208,7 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 	public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
 		Colour colour = view.getCurrentPlayer();
 		Player player = this.players.stream().filter(p -> p.colour == colour).findFirst().orElseThrow();
-		Notification notification = new Notification(NotificationNames.MOVE_REQUEST);
+		Notification notification = new Notification(NotificationNames.MOVE_REQUEST.toString());
 	}
 
 
@@ -250,7 +250,7 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 
 		this.model = new ScotlandYardModel(setup.revealRounds(), setup.graphProperty().get(), mrX, detectives.get(0), detectives.stream().skip(1).toArray(PlayerConfiguration[]::new));
 
-		Notification notification = new Notification(NotificationNames.GAME_START);
+		Notification notification = new Notification(NotificationNames.GAME_START.toString());
 		this.sendNotificationToAll(notification);
 
 		model.registerSpectator(this);

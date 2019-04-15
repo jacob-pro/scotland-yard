@@ -15,7 +15,6 @@ public class Client extends WebSocketClient {
 	public ClientDelegate delegate;
 	private Counter streamIDCounter = new Counter();
 	private Map<Integer, CompletableFuture<String>> pendingRequests = new HashMap<>();
-	private CompletableFuture<Handshake> connectFuture = new CompletableFuture<>();
 	private MessageDeserializer messageDeserializer = new MessageDeserializer();
 	private Gson gson = new Gson();
 	private boolean started = false;

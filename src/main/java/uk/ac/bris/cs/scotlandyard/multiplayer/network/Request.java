@@ -2,11 +2,11 @@ package uk.ac.bris.cs.scotlandyard.multiplayer.network;
 
 public class Request extends Message {
 
-	public int streamID;
+	int streamID;
 	public String action;
 	public String data;
 
-	public Request() {
+	Request() {
 		this.messageType = MessageType.REQUEST;
 	}
 

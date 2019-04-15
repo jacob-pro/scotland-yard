@@ -2,7 +2,7 @@ package uk.ac.bris.cs.scotlandyard.multiplayer.network;
 
 public class Response extends Message {
 
-	public int streamID;
+	int streamID;
 	public String data;
 	public String error;
 

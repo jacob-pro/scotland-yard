@@ -1,6 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.multiplayer.network;
 
-public interface MessageVisitor {
+interface MessageVisitor {
 
 	default void accept(Handshake message) {}
 

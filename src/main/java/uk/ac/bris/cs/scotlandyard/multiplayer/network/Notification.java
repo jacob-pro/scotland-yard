@@ -5,8 +5,8 @@ public class Notification extends Message {
 	public String content;
 	public String name;
 
-	public Notification(Object name) {
-		this.name = name.toString();
+	public Notification(String name) {
+		this.name = name;
 		this.messageType = MessageType.NOTIFICATION;
 	}
 
