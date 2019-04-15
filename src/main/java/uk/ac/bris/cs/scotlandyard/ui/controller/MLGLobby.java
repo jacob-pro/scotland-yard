@@ -1,5 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.controller;
 
+import com.google.gson.Gson;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -104,6 +105,9 @@ public final class MLGLobby implements Controller, Observer {
 			if (!this.colourChoice.getItems().contains(c)) this.colourChoice.getItems().add(c);
 		});
 		this.tableView.getItems().setAll(lobby.players);
+
+		Gson gson = new Gson();
+		System.out.println(gson.toJson(lobby));
 	}
 
 	@Override
@@ -122,11 +126,14 @@ public final class MLGLobby implements Controller, Observer {
 	}
 
 	private void readyButtonAction(ActionEvent event) {
+		this.colourChoice.setDisable(this.readyButton.isSelected());
 		this.config.client.setReady(this.readyButton.isSelected());
 	}
 
 	private void colourChangeAction(ActionEvent event) {
-		this.config.client.setColour(this.colourChoice.getValue());
+		Colour colour = this.colourChoice.getValue();
+		this.config.client.setColour(colour);
+		this.readyButton.setDisable(colour == null);
 	}
 
 }

@@ -54,6 +54,8 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 	private String serverName;
 	private ResourceManager manager;
 	private Server server;
+	private Date startTime;
+	private Timer timer;
 	private Gson gson = new Gson();
 	private List<Player> players = new ArrayList<>();
 	private CompletableFuture<ScotlandYardServer> startupFuture = new CompletableFuture<>();
@@ -134,6 +136,7 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 				try {
 					player.ready = Boolean.valueOf(request.data);
 					response.data = "Success";
+					this.updateStartTime();
 					this.sendLobbyUpdateToAll();
 				} catch (IllegalArgumentException e) {
 					response.error = "Illegal value";
@@ -149,7 +152,9 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 		Player player = this.players.stream().filter(p -> p.conn == conn).findFirst().orElse(null);
 		if (player == null) return;
 		this.players.remove(player);
+		//If during setup phase
 		if (this.model == null) {
+			this.updateStartTime();
 			this.sendLobbyUpdateToAll();
 		} else {
 			//the other team wins
@@ -158,6 +163,7 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 
 	private Lobby currentLobby() {
 		Lobby lobby = new Lobby();
+		lobby.startTime = this.startTime;
 		lobby.players = this.players.stream().map(p -> {
 			LobbyPlayer player = new LobbyPlayer();
 			player.colour = p.colour;
@@ -167,6 +173,27 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 			return player;
 		}).collect(toList());
 		return lobby;
+	}
+
+	private void updateStartTime() {
+		if (this.players.stream().allMatch(p -> p.ready) && this.players.stream().filter(p -> p.colour != null ).count() >= 2
+				&& this.players.stream().anyMatch(p -> p.colour == Colour.BLACK)) {
+			Calendar cal = Calendar.getInstance();
+			cal.add(Calendar.SECOND, 10);
+			this.startTime = cal.getTime();
+			this.timer = new Timer();
+			this.timer.schedule(
+					new java.util.TimerTask() {
+						@Override
+						public void run() {
+							startGame();
+						}
+					}, this.startTime
+			);
+		} else {
+			if (this.timer != null) this.timer.cancel();
+			this.startTime = null;
+		}
 	}
 
 	private void sendLobbyUpdateToAll() {

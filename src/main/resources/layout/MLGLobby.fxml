@@ -35,7 +35,7 @@
                               <ChoiceBox fx:id="colourChoice" prefWidth="200.0" />
                            </children>
                         </HBox>
-                        <ToggleButton fx:id="readyButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Ready" />
+                        <ToggleButton fx:id="readyButton" disable="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Ready" />
                         <Button fx:id="exitButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Exit" />
                      </children>
                   </VBox>
