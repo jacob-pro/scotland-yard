@@ -62,14 +62,11 @@ public final class MLGHostGame implements Controller {
 
 		int maxPlayers = (int) this.maxPlayersSlider.getValue();
 		Integer turnTimer = this.turnTimerCheckBox.isSelected() ? Integer.valueOf(this.turnTimerField.getText()): null;
-		String localhost = "localhost";
-		InetSocketAddress address = new InetSocketAddress(localhost, port);
 
 		MLGModel config = new MLGModel();
-
 		try {
-			config.server = ScotlandYardServer.CreateScotlandYardServer(this.startScreen.getManager(), address, maxPlayers, turnTimer, this.serverName.getText()).get();
-			config.client = new ScotlandYardClient(localhost, port, "Host");
+			config.server = ScotlandYardServer.CreateScotlandYardServer(this.startScreen.getManager(), port, maxPlayers, turnTimer, this.serverName.getText()).get();
+			config.client = new ScotlandYardClient("localhost", port, "Host");
 			config.client.connect().get();
 		} catch (InterruptedException | URISyntaxException e) {
 			this.startScreen.getGame().handleFatalException(e, config);

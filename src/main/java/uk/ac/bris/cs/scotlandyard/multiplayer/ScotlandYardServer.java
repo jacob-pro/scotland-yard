@@ -24,7 +24,8 @@ import static java.util.stream.Collectors.toList;
 public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 
 	//Creates a network and waits for it to start
-	public static Future<ScotlandYardServer> CreateScotlandYardServer(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
+	public static Future<ScotlandYardServer> CreateScotlandYardServer(ResourceManager manager, int port, int maxPlayers, Integer turnTimer, String serverName) {
+		InetSocketAddress address = new InetSocketAddress("0.0.0.0", port);
 		ScotlandYardServer server = new ScotlandYardServer(manager, address, maxPlayers, turnTimer, serverName);
 		return server.startupFuture;
 	}
