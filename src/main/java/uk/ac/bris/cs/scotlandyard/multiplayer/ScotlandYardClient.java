@@ -23,8 +23,8 @@ public class ScotlandYardClient implements ClientDelegate {
 	private boolean gameOver = false;
 	private Join joinMessage;
 
-	public ScotlandYardClient(String hostname, Integer port, String username) throws URISyntaxException {
-		URI uri = new URI("ws://" + hostname + ":" + port.toString());
+	public ScotlandYardClient(String hostname, int port, String username) throws URISyntaxException {
+		URI uri = new URI("ws://" + hostname + ":" + port);
 		Map<String,String> headers = new HashMap<>();
 		headers.put("Username", username);
 		headers.put("Version", ScotlandYardServer.protocolVersionString);

@@ -179,7 +179,7 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 		if (this.players.stream().allMatch(p -> p.ready) && this.players.stream().filter(p -> p.colour != null ).count() >= 2
 				&& this.players.stream().anyMatch(p -> p.colour == Colour.BLACK)) {
 			Calendar cal = Calendar.getInstance();
-			cal.add(Calendar.SECOND, 10);
+			cal.add(Calendar.SECOND, 11);
 			this.startTime = cal.getTime();
 			this.timer = new Timer();
 			this.timer.schedule(

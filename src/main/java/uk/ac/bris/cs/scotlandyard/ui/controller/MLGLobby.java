@@ -1,6 +1,7 @@
 package uk.ac.bris.cs.scotlandyard.ui.controller;
 
-import com.google.gson.Gson;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -9,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
 import javafx.util.StringConverter;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
@@ -21,6 +23,7 @@ import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @BindFXML(value = "layout/MLGLobby.fxml", css = "style/mlg.css")
@@ -37,6 +40,7 @@ public final class MLGLobby implements Controller, Observer {
 	@FXML private TableColumn<LobbyPlayer, String> colourColumn;
 	@FXML private TableColumn<LobbyPlayer, String> readyColumn;
 	@FXML private ChoiceBox<Colour> colourChoice;
+	private Timeline countdown;
 
 	@Override
 	public Parent root() {
@@ -106,8 +110,21 @@ public final class MLGLobby implements Controller, Observer {
 		});
 		this.tableView.getItems().setAll(lobby.players);
 
-		Gson gson = new Gson();
-		System.out.println(gson.toJson(lobby));
+		if (this.countdown != null) {
+			this.countdown.stop();
+			this.countdown = null;
+		}
+		if (lobby.startTime != null) {
+			this.countdown = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+				Date now = new Date();
+				long remaining = (lobby.startTime.getTime() - now.getTime()) / 1000;
+				this.readyButton.setText("Starting in " + remaining);
+			}));
+			this.countdown.setCycleCount(Timeline.INDEFINITE);
+			this.countdown.play();
+		} else {
+			this.readyButton.setText("Ready");
+		}
 	}
 
 	@Override
