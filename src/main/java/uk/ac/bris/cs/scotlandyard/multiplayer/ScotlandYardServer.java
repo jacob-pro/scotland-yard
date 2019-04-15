@@ -207,8 +207,7 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 	@Override
 	public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
 		Colour colour = view.getCurrentPlayer();
-		@SuppressWarnings("OptionalGetWithoutIsPresent")
-		Player player = this.players.stream().filter(p -> p.colour == colour).findFirst().get();
+		Player player = this.players.stream().filter(p -> p.colour == colour).findFirst().orElseThrow();
 		Notification notification = new Notification(NotificationNames.MOVE_REQUEST);
 	}
 

@@ -1,11 +1,11 @@
 package uk.ac.bris.cs.scotlandyard.ui.model;
 
-import uk.ac.bris.cs.scotlandyard.multiplayer.Client;
+import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardClient;
 import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardServer;
 
 public class MLGModel {
 
-	public Client client;
+	public ScotlandYardClient client;
 	public ScotlandYardServer server;
 
 	public void cleanUp() {

@@ -1,4 +1,4 @@
-package uk.ac.bris.cs.scotlandyard.multiplayer;
+package uk.ac.bris.cs.scotlandyard.multiplayer.network;
 
 @SuppressWarnings("serial")
 public class ConnectionException extends RuntimeException {

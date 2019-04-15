@@ -10,7 +10,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
-import uk.ac.bris.cs.scotlandyard.multiplayer.Client;
+import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardClient;
 import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 
@@ -71,7 +71,7 @@ public final class MLGJoinGame implements Controller {
 
 		MLGModel config = new MLGModel();
 		try {
-			config.client = new Client(host, port, this.nameField.getText());
+			config.client = new ScotlandYardClient(host, port, this.nameField.getText());
 		} catch (URISyntaxException e) {
 			Utils.handleNonFatalException(e, "Invalid address");
 			config.cleanUp();

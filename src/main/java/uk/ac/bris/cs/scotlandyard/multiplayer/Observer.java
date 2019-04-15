@@ -17,6 +17,6 @@ public interface Observer extends Spectator {
 	default void onMoveRequested() {}
 
 	//When something is wrong with the connection
-	default void onConnectionError(ConnectionException e) {}
+	default void onClientError(RuntimeException e) {}
 
 }

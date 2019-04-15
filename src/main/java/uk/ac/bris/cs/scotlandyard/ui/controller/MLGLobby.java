@@ -12,7 +12,6 @@ import javafx.util.StringConverter;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
-import uk.ac.bris.cs.scotlandyard.multiplayer.ConnectionException;
 import uk.ac.bris.cs.scotlandyard.multiplayer.Observer;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.Join;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.Lobby;
@@ -113,7 +112,7 @@ public final class MLGLobby implements Controller, Observer {
 	}
 
 	@Override
-	public void onConnectionError(ConnectionException e) {
+	public void onClientError(RuntimeException e) {
 		Utils.handleFatalException(e);
 	}
 

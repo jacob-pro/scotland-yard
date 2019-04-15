@@ -7,7 +7,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
-import uk.ac.bris.cs.scotlandyard.multiplayer.Client;
+import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardClient;
 import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardServer;
 import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
@@ -69,7 +69,7 @@ public final class MLGHostGame implements Controller {
 
 		try {
 			config.server = ScotlandYardServer.CreateScotlandYardServer(this.startScreen.getManager(), address, maxPlayers, turnTimer, this.serverName.getText()).get();
-			config.client = new Client(localhost, port, "Host");
+			config.client = new ScotlandYardClient(localhost, port, "Host");
 			config.client.connect().get();
 		} catch (InterruptedException | URISyntaxException e) {
 			Utils.handleFatalException(e);
