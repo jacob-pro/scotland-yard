@@ -33,6 +33,10 @@ public class MLGGame extends BaseGame implements Spectator {
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
+		this.setupGame();
+	}
+
+	private void setupGame() {
 		MLGStartScreen startScreen = new MLGStartScreen(this, resourceManager);
 		showOverlay(startScreen.root());
 	}
@@ -70,7 +74,9 @@ public class MLGGame extends BaseGame implements Spectator {
 		}
 
 		void terminate() {
-
+			controls.forEach(model.client::unregisterSpectator);
+			controls.forEach(GameControl::onGameDetached);
+			this.model.cleanUp();
 		}
 
 		@Override
@@ -81,7 +87,16 @@ public class MLGGame extends BaseGame implements Spectator {
 
 		@Override
 		public void onGameOver(ScotlandYardView view, Set<Colour> winningPlayers) {
-
+			board.lock();
+			notifications.dismissAll();
+			Notifications.NotificationBuilder.Notification gameOver = new Notifications.NotificationBuilder(
+					"Game over, winner is " + winningPlayers)
+					.addAction("Main menu", () -> {
+						notifications.dismissAll();
+						terminate();
+						setupGame();
+					}).create();
+			notifications.show(NOTIFY_GAMEOVER, gameOver);
 		}
 
 		@Override
