@@ -1,4 +1,4 @@
-package uk.ac.bris.cs.scotlandyard.network.model;
+package uk.ac.bris.cs.scotlandyard.multiplayer.model;
 
 //Reasons why joining the game failed
 public enum JoinErrors {

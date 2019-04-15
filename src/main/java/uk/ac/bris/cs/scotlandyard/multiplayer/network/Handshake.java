@@ -1,11 +1,11 @@
-package uk.ac.bris.cs.scotlandyard.network.messaging;
+package uk.ac.bris.cs.scotlandyard.multiplayer.network;
 
 public class Handshake extends Message {
 
 	public String error;
 	public String data;
 
-	public Handshake() {
+	Handshake() {
 		this.messageType = MessageType.HANDSHAKE;
 	}
 

@@ -1,15 +1,15 @@
-package uk.ac.bris.cs.scotlandyard.network;
+package uk.ac.bris.cs.scotlandyard.multiplayer;
 
 import com.google.gson.Gson;
 import javafx.application.Platform;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
-import uk.ac.bris.cs.scotlandyard.network.messaging.*;
-import uk.ac.bris.cs.scotlandyard.network.model.Join;
-import uk.ac.bris.cs.scotlandyard.network.model.Lobby;
-import uk.ac.bris.cs.scotlandyard.network.model.NotificationNames;
-import uk.ac.bris.cs.scotlandyard.network.model.RequestActions;
+import uk.ac.bris.cs.scotlandyard.multiplayer.network.*;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.Join;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.Lobby;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.NotificationNames;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.RequestActions;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,7 +29,7 @@ public class Client {
 		URI uri = new URI("ws://" + hostname + ":" + port.toString());
 		Map<String,String> headers = new HashMap<>();
 		headers.put("Username", username);
-		headers.put("Version", Server.protocolVersionString);
+		headers.put("Version", ScotlandYardServer.protocolVersionString);
 		this.internal = new MLGConnectionInternal(uri, headers);
 	}
 
@@ -48,7 +48,7 @@ public class Client {
 
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<?> setColour(Colour colour) {
-		String value = (colour == null) ? Server.undecidedColour : colour.toString();
+		String value = (colour == null) ? ScotlandYardServer.undecidedColour : colour.toString();
 		return this.internal.performRequest(RequestActions.SET_COLOUR, value);
 	}
 

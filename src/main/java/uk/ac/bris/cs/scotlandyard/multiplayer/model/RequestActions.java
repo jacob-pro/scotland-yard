@@ -1,4 +1,4 @@
-package uk.ac.bris.cs.scotlandyard.network.model;
+package uk.ac.bris.cs.scotlandyard.multiplayer.model;
 
 public enum RequestActions {
 	GET_LOBBY, SET_COLOUR, SET_READY, MAKE_MOVE

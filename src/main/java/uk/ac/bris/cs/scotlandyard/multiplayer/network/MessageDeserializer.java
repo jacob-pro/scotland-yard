@@ -1,4 +1,4 @@
-package uk.ac.bris.cs.scotlandyard.network.messaging;
+package uk.ac.bris.cs.scotlandyard.multiplayer.network;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

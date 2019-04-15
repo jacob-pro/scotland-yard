@@ -1,4 +1,4 @@
-package uk.ac.bris.cs.scotlandyard.network.model;
+package uk.ac.bris.cs.scotlandyard.multiplayer.model;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;

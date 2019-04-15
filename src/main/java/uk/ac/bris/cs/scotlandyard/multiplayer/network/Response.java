@@ -1,4 +1,4 @@
-package uk.ac.bris.cs.scotlandyard.network.messaging;
+package uk.ac.bris.cs.scotlandyard.multiplayer.network;
 
 public class Response extends Message {
 
@@ -6,7 +6,7 @@ public class Response extends Message {
 	public String data;
 	public String error;
 
-	public Response() {
+	Response() {
 		this.messageType = MessageType.RESPONSE;
 	}
 

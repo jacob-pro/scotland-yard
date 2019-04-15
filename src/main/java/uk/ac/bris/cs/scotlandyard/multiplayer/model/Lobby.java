@@ -1,4 +1,4 @@
-package uk.ac.bris.cs.scotlandyard.network.model;
+package uk.ac.bris.cs.scotlandyard.multiplayer.model;
 
 import uk.ac.bris.cs.scotlandyard.model.Colour;
 

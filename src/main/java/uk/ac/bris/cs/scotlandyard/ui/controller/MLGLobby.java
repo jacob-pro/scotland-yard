@@ -1,6 +1,5 @@
 package uk.ac.bris.cs.scotlandyard.ui.controller;
 
-import com.google.gson.Gson;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -13,11 +12,11 @@ import javafx.util.StringConverter;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
-import uk.ac.bris.cs.scotlandyard.network.ConnectionException;
-import uk.ac.bris.cs.scotlandyard.network.Observer;
-import uk.ac.bris.cs.scotlandyard.network.model.Join;
-import uk.ac.bris.cs.scotlandyard.network.model.Lobby;
-import uk.ac.bris.cs.scotlandyard.network.model.LobbyPlayer;
+import uk.ac.bris.cs.scotlandyard.multiplayer.ConnectionException;
+import uk.ac.bris.cs.scotlandyard.multiplayer.Observer;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.Join;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.Lobby;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.LobbyPlayer;
 import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 

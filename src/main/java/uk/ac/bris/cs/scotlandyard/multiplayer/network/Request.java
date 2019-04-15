@@ -1,4 +1,4 @@
-package uk.ac.bris.cs.scotlandyard.network.messaging;
+package uk.ac.bris.cs.scotlandyard.multiplayer.network;
 
 public class Request extends Message {
 

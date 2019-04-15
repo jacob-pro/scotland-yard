@@ -1,7 +1,7 @@
-package uk.ac.bris.cs.scotlandyard.network;
+package uk.ac.bris.cs.scotlandyard.multiplayer;
 
 import uk.ac.bris.cs.scotlandyard.model.Spectator;
-import uk.ac.bris.cs.scotlandyard.network.model.Lobby;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.Lobby;
 
 public interface Observer extends Spectator {
 

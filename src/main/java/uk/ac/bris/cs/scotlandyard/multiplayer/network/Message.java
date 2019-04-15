@@ -1,4 +1,4 @@
-package uk.ac.bris.cs.scotlandyard.network.messaging;
+package uk.ac.bris.cs.scotlandyard.multiplayer.network;
 
 //An abstract class that represents the different types of messages that form the network protocol
 abstract public class Message {

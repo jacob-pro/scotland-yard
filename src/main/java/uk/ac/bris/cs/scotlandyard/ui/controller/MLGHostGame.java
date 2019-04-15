@@ -7,8 +7,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
-import uk.ac.bris.cs.scotlandyard.network.Client;
-import uk.ac.bris.cs.scotlandyard.network.Server;
+import uk.ac.bris.cs.scotlandyard.multiplayer.Client;
+import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardServer;
 import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 
@@ -68,7 +68,7 @@ public final class MLGHostGame implements Controller {
 		MLGModel config = new MLGModel();
 
 		try {
-			config.server = Server.CreateMLGServer(this.startScreen.getManager(), address, maxPlayers, turnTimer, this.serverName.getText()).get();
+			config.server = ScotlandYardServer.CreateScotlandYardServer(this.startScreen.getManager(), address, maxPlayers, turnTimer, this.serverName.getText()).get();
 			config.client = new Client(localhost, port, "Host");
 			config.client.connect().get();
 		} catch (InterruptedException | URISyntaxException e) {

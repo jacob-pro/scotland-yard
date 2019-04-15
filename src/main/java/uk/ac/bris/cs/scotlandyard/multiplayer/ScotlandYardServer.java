@@ -1,15 +1,14 @@
-package uk.ac.bris.cs.scotlandyard.network;
+package uk.ac.bris.cs.scotlandyard.multiplayer;
 
 import com.google.gson.Gson;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
-import org.java_websocket.server.WebSocketServer;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
 import uk.ac.bris.cs.scotlandyard.model.*;
-import uk.ac.bris.cs.scotlandyard.network.messaging.*;
-import uk.ac.bris.cs.scotlandyard.network.model.*;
+import uk.ac.bris.cs.scotlandyard.multiplayer.network.*;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.*;
 import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 import uk.ac.bris.cs.scotlandyard.ui.model.PlayerProperty;
 
@@ -22,29 +21,28 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
-public class Server implements Spectator, Player {
+public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 
 	//Creates a network and waits for it to start
-	public static Future<Server> CreateMLGServer(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
-		Server server = new Server(manager, address, maxPlayers, turnTimer, serverName);
-		server.internal.start();
-		return server.internal.creationFuture;
+	public static Future<ScotlandYardServer> CreateScotlandYardServer(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
+		ScotlandYardServer server = new ScotlandYardServer(manager, address, maxPlayers, turnTimer, serverName);
+		return server.startupFuture;
 	}
 
 	private Counter playerIDCounter = new Counter();
-	private class ServerPlayer {
+	private class Player {
 		String name;
 		Colour colour;
 		Boolean ready;
 		WebSocket conn;
 		Integer id;
 
-		ServerPlayer(WebSocket conn, String name) {
+		Player(WebSocket conn, String name) {
 			this.conn = conn;
 			this.name = name;
 			this.colour = null;
 			this.ready = false;
-			this.id = Server.this.playerIDCounter.next();
+			this.id = ScotlandYardServer.this.playerIDCounter.next();
 		}
 	}
 
@@ -55,34 +53,46 @@ public class Server implements Spectator, Player {
 	private Integer turnTimer;
 	private String serverName;
 	private ResourceManager manager;
-	private MLGServerInternal internal;
+	private Server server;
 	private Gson gson = new Gson();
-	private List<ServerPlayer> players = new ArrayList<>();
+	private List<Player> players = new ArrayList<>();
+	private CompletableFuture<ScotlandYardServer> startupFuture = new CompletableFuture<>();
 
-	private Server(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
+	private ScotlandYardServer(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
 		this.manager = manager;
 		this.maxPlayers = maxPlayers;
 		this.turnTimer = turnTimer;
 		this.serverName = serverName;
-		this.internal = new MLGServerInternal(address);
+		this.server = new Server(address, this);
+		this.server.start();
 	}
 
-	private String handlePlayerJoin(ClientHandshake clientHandshake, WebSocket conn) throws Exception {
+	@Override
+	public void serverDidStart(Server s, Exception e) {
+		if (e == null) {
+			this.startupFuture.complete(this);
+		} else {
+			this.startupFuture.completeExceptionally(e);
+		}
+	}
+
+	@Override
+	public String serverReceivedConnection(Server s, ClientHandshake clientHandshake, WebSocket conn) throws ServerJoinException {
 		//Check that the player is able to join
-		if (this.model != null) throw new Exception(JoinErrors.GAME_STARTED.toString());
-		if (this.players.size() >= this.maxPlayers) throw new Exception(JoinErrors.SERVER_FULL.toString());
-		if (!clientHandshake.getFieldValue("Version").equals(Server.protocolVersionString))
-			throw new Exception(JoinErrors.VERSION_MISMATCH.toString());
+		if (this.model != null) throw new ServerJoinException(JoinErrors.GAME_STARTED.toString());
+		if (this.players.size() >= this.maxPlayers) throw new ServerJoinException(JoinErrors.SERVER_FULL.toString());
+		if (!clientHandshake.getFieldValue("Version").equals(ScotlandYardServer.protocolVersionString))
+			throw new ServerJoinException(JoinErrors.VERSION_MISMATCH.toString());
 
 		//Create the player
-		ServerPlayer player = new ServerPlayer(conn, clientHandshake.getFieldValue("Username"));
+		Player player = new Player(conn, clientHandshake.getFieldValue("Username"));
 		this.players.add(player);
 
 		//Fill the join message
 		Join join = new Join();
-		join.serverName = Server.this.serverName;
-		join.maxPlayers = Server.this.maxPlayers;
-		join.turnTimer = Server.this.turnTimer;
+		join.serverName = ScotlandYardServer.this.serverName;
+		join.maxPlayers = ScotlandYardServer.this.maxPlayers;
+		join.turnTimer = ScotlandYardServer.this.turnTimer;
 		join.playerID = player.id;
 
 		//Notify players that someone is joining
@@ -90,7 +100,13 @@ public class Server implements Spectator, Player {
 		return gson.toJson(join);
 	}
 
-	private void handleRequest(Request request, Response response, ServerPlayer player) {
+	@Override
+	public void serverReceivedRequest(Server s, Request request, Response response, WebSocket conn) {
+		Player player = this.players.stream().filter(p -> p.conn == conn).findFirst().orElse(null);
+		if (player == null) {
+			response.error = "Unknown player";
+			return;
+		}
 		RequestActions action = Arrays.stream(RequestActions.values()).filter(v -> v.toString().equals(request.action)).findAny().orElse(null);
 		if (action == null) {
 			response.error = "Unknown action";
@@ -128,7 +144,10 @@ public class Server implements Spectator, Player {
 		}
 	}
 
-	private void handlePlayerExit(ServerPlayer player) {
+	@Override
+	public void serverClientDisconnected(Server s, WebSocket conn) {
+		Player player = this.players.stream().filter(p -> p.conn == conn).findFirst().orElse(null);
+		if (player == null) return;
 		this.players.remove(player);
 		if (this.model == null) {
 			this.sendLobbyUpdateToAll();
@@ -152,7 +171,7 @@ public class Server implements Spectator, Player {
 
 	private void sendLobbyUpdateToAll() {
 		Notification notification = new Notification(NotificationNames.LOBBY_UPDATE);
-		notification.content = gson.toJson(Server.this.currentLobby());
+		notification.content = gson.toJson(ScotlandYardServer.this.currentLobby());
 		this.sendNotificationToAll(notification);
 	}
 
@@ -189,71 +208,10 @@ public class Server implements Spectator, Player {
 	public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
 		Colour colour = view.getCurrentPlayer();
 		@SuppressWarnings("OptionalGetWithoutIsPresent")
-		ServerPlayer player = this.players.stream().filter(p -> p.colour == colour).findFirst().get();
+		Player player = this.players.stream().filter(p -> p.colour == colour).findFirst().get();
 		Notification notification = new Notification(NotificationNames.MOVE_REQUEST);
 	}
 
-	//The internal class handles communication, but not game logic
-	private class MLGServerInternal extends WebSocketServer {
-
-		private CompletableFuture<Server> creationFuture = new CompletableFuture<>();
-		private MessageDeserializer messageDeserializer = new MessageDeserializer();
-
-		MLGServerInternal(InetSocketAddress address) {
-			super(address);
-		}
-
-		@Override
-		public void onStart() {
-			this.creationFuture.complete(Server.this);
-		}
-
-		@Override
-		public void onOpen(WebSocket conn, ClientHandshake handshake) {
-			Handshake response = new Handshake();
-			try {
-				response.data = Server.this.handlePlayerJoin(handshake, conn);
-				conn.send(gson.toJson(response));
-			} catch (Exception e) {
-				response.error = e.getMessage();
-				conn.send(gson.toJson(response));
-				conn.close();
-			}
-		}
-
-		@Override
-		public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-			if (remote) {
-				Optional<ServerPlayer> player = Server.this.players.stream().filter(p -> p.conn == conn).findFirst();
-				player.ifPresent(Server.this::handlePlayerExit);
-			}
-		}
-
-		@Override
-		public void onMessage(WebSocket conn, String string) {
-			this.messageDeserializer.deserialize(string).ifPresent(m -> m.accept(new MessageVisitor() {
-				//Incoming requests
-				@Override
-				public void accept(Request message) {
-					Optional<ServerPlayer> player = Server.this.players.stream().filter(p -> p.conn == conn).findFirst();
-					player.ifPresent(p -> {
-						Response response = new Response();
-						response.streamID = message.streamID;
-						Server.this.handleRequest(message, response, p);
-						p.conn.send(gson.toJson(response));
-					});
-				}
-			}));
-		}
-
-		@Override
-		public void onError(WebSocket conn, Exception ex) {
-			// Note that if error is fatal onClose is also called
-			if(!this.creationFuture.isDone()) {
-				this.creationFuture.completeExceptionally(ex);
-			}
-		}
-	}
 
 	// Code below is copied from GameSetup - Use random locations for all players
 	@SuppressWarnings("Duplicates")
@@ -302,7 +260,7 @@ public class Server implements Spectator, Player {
 
 	public void close() {
 		try {
-			this.internal.stop(0);
+			this.server.stop(0);
 		} catch (InterruptedException ignored) {
 
 		}

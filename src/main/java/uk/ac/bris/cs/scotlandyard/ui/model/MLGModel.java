@@ -1,12 +1,12 @@
 package uk.ac.bris.cs.scotlandyard.ui.model;
 
-import uk.ac.bris.cs.scotlandyard.network.Client;
-import uk.ac.bris.cs.scotlandyard.network.Server;
+import uk.ac.bris.cs.scotlandyard.multiplayer.Client;
+import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardServer;
 
 public class MLGModel {
 
 	public Client client;
-	public Server server;
+	public ScotlandYardServer server;
 
 	public void cleanUp() {
 		//Close client first so we don't have to worry about connection exceptions bubbling up
