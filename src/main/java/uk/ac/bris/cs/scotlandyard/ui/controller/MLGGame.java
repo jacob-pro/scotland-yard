@@ -11,8 +11,6 @@ import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import static uk.ac.bris.cs.scotlandyard.ui.Utils.handleFatalException;
-
 public class MLGGame extends BaseGame implements Spectator {
 
 	public MLGGame(ResourceManager manager, Stage stage) {

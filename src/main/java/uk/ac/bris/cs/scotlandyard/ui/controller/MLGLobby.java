@@ -19,7 +19,6 @@ import uk.ac.bris.cs.scotlandyard.multiplayer.Observer;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.Join;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.Lobby;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.LobbyPlayer;
-import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 
 import java.util.ArrayList;
@@ -145,6 +144,7 @@ public final class MLGLobby implements Controller, Observer {
 
 	private void exitButtonAction(ActionEvent event) {
 		this.config.cleanUp();
+		this.startScreen.getGame().getStage().setOnCloseRequest(null);
 		this.startScreen.popController(this);
 	}
 
