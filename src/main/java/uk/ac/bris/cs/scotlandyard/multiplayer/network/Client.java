@@ -2,6 +2,7 @@ package uk.ac.bris.cs.scotlandyard.multiplayer.network;
 
 import com.google.gson.Gson;
 import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.handshake.ServerHandshake;
 
 import java.net.URI;
@@ -19,8 +20,9 @@ public class Client extends WebSocketClient {
 	private Gson gson = new Gson();
 	private boolean started = false;
 
-	public Client(URI uri, Map<String, String> headers, ClientDelegate delegate) {
-		super(uri, headers);
+	//Timeout is in milliseconds - Java Socket connect()
+	public Client(URI uri, Map<String, String> headers, int connectTimeout, ClientDelegate delegate) {
+		super(uri, new Draft_6455(), headers, connectTimeout);
 		this.delegate = delegate;
 	}
 

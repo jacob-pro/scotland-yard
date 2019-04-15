@@ -288,6 +288,7 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 	public void close() {
 		try {
 			this.server.stop(0);
+			System.out.println("ScotlandYardServer closed");
 		} catch (InterruptedException ignored) {
 
 		}

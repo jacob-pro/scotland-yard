@@ -11,8 +11,6 @@ import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardClient;
 import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardServer;
 import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
-
-import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.util.concurrent.ExecutionException;
 

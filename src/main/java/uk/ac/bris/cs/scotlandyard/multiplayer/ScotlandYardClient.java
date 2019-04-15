@@ -28,7 +28,7 @@ public class ScotlandYardClient implements ClientDelegate {
 		Map<String,String> headers = new HashMap<>();
 		headers.put("Username", username);
 		headers.put("Version", ScotlandYardServer.protocolVersionString);
-		this.client = new Client(uri, headers, this);
+		this.client = new Client(uri, headers, 5000,this);
 	}
 
 	public CompletableFuture<Join> connect() {
@@ -117,9 +117,10 @@ public class ScotlandYardClient implements ClientDelegate {
 		return this.joinMessage;
 	}
 
-	public void close() {
+	public void disconnect() {
 		try {
 			this.client.closeBlocking();
+			System.out.println("ScotlandYardClient disconnected");
 		} catch (InterruptedException ignored) {
 
 		}
