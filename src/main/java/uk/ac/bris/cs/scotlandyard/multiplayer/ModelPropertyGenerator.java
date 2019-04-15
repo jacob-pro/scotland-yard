@@ -15,11 +15,9 @@ import static java.util.stream.Collectors.toList;
 public class ModelPropertyGenerator {
 
 	public static ModelProperty modelPropertyForColours(ResourceManager manager, Set<Colour> enabledColours) {
-
 		ModelProperty defaults = ModelProperty.createDefault(manager);
 		ObservableList<PlayerProperty> enabledPlayers = FXCollections.observableArrayList(defaults.allPlayers().stream()
 				.filter(p -> enabledColours.contains(p.colour())).collect(toList()));
-
 		return new ModelProperty(null, defaults.revealRounds(), enabledPlayers, defaults.graphProperty().get());
 	}
 

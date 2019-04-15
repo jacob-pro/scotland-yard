@@ -15,7 +15,9 @@ import javafx.util.StringConverter;
 import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
-import uk.ac.bris.cs.scotlandyard.multiplayer.Observer;
+import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardClient;
+import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardClientObserver;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.GameStart;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.Join;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.Lobby;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.LobbyPlayer;
@@ -26,7 +28,7 @@ import java.util.Date;
 import java.util.List;
 
 @BindFXML(value = "layout/MLGLobby.fxml", css = "style/mlg.css")
-public final class MLGLobby implements Controller, Observer {
+public final class MLGLobby implements Controller, ScotlandYardClientObserver {
 
 	@FXML private StackPane root;
 	@FXML private Label serverNameLabel;
@@ -96,14 +98,14 @@ public final class MLGLobby implements Controller, Observer {
 		this.config.client.getLobby().whenComplete((result, error) -> {
 			Platform.runLater(() -> {
 				if (error == null) {
-					this.onLobbyChange(result);
+					this.onLobbyChange(this.config.client, result);
 				}
 			});
 		});
 	}
 
 	@Override
-	public void onLobbyChange(Lobby lobby) {
+	public void onLobbyChange(ScotlandYardClient client, Lobby lobby) {
 		LobbyPlayer us = lobby.players.stream().filter(p -> p.id == this.playerID).findFirst().orElseThrow();
 		this.readyButton.setSelected(us.ready);
 		List<Colour> taken = lobby.takenColours();
@@ -132,13 +134,13 @@ public final class MLGLobby implements Controller, Observer {
 	}
 
 	@Override
-	public void onGameStarted() {
-		this.config.client.unregisterObserver(this);
-		this.startScreen.getGame().startGame(this.config);
+	public void onGameStarted(ScotlandYardClient client, GameStart gameStart) {
+		client.unregisterObserver(this);
+		this.startScreen.getGame().startGame(this.config, gameStart);
 	}
 
 	@Override
-	public void onClientError(RuntimeException e) {
+	public void onClientError(ScotlandYardClient client, RuntimeException e) {
 		MLGGame.handleFatalException(e, this.config);
 	}
 

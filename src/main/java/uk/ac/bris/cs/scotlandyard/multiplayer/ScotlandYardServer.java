@@ -135,10 +135,14 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 				break;
 			case SET_READY:
 				try {
-					player.ready = Boolean.valueOf(request.data);
-					response.data = "Success";
-					this.updateStartTime();
-					this.sendLobbyUpdateToAll();
+					if (this.model == null) {
+						player.ready = Boolean.valueOf(request.data);
+						response.data = "Success";
+						this.updateStartTime();
+						this.sendLobbyUpdateToAll();
+					} else {
+						response.error = "Game already started";
+					}
 				} catch (IllegalArgumentException e) {
 					response.error = "Illegal value";
 				}
@@ -266,7 +270,8 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 
 		Notification notification = new Notification(NotificationNames.GAME_START.toString());
 		GameStart gameStart = new GameStart();
-		gameStart.players = model.getPlayers();
+		gameStart.players = model.getPlayers().stream().map(GameStartPlayer::new).collect(toList());
+		gameStart.players.forEach(gsp -> gsp.startLocation = this.model.getPlayerLocation(gsp.colour).orElseThrow());
 		gameStart.rounds = model.getRounds();
 		notification.content = gson.toJson(gameStart);
 		this.sendNotificationToAll(notification);

@@ -2,7 +2,6 @@ package uk.ac.bris.cs.scotlandyard.multiplayer;
 
 import com.google.gson.Gson;
 import javafx.application.Platform;
-import org.checkerframework.checker.nullness.Opt;
 import uk.ac.bris.cs.gamekit.graph.Graph;
 import uk.ac.bris.cs.scotlandyard.model.*;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.*;
@@ -14,11 +13,12 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 
 	private CompletableFuture<Join> connectFuture = new CompletableFuture<>();
-	private Set<Observer> observers = new HashSet<>();
+	private Set<ScotlandYardClientObserver> observers = new HashSet<>();
 	private Set<Spectator> spectators = new HashSet<>();
 	private Client client;
 	private Gson gson = new Gson();
@@ -73,11 +73,11 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 		switch (type) {
 			case LOBBY_UPDATE:
 				Lobby lobby = gson.fromJson(content, Lobby.class);
-				this.tellObservers(o -> o.onLobbyChange(lobby));
+				this.tellObservers(o -> o.onLobbyChange(this, lobby));
 				break;
 			case GAME_START:
 				this.gameStart = gson.fromJson(content, GameStart.class);
-				this.tellObservers(Observer::onGameStarted);
+				this.tellObservers(o -> o.onGameStarted(this, this.gameStart));
 				break;
 			case MOVE_REQUEST:
 				break;
@@ -86,28 +86,28 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 			case ROUND_STARTED:
 				break;
 			case ROTATION_COMPLETE:
-				this.tellSpectators(o -> o.onRotationComplete(null));
+				this.tellSpectators(o -> o.onRotationComplete(this));
 				break;
 			case GAME_OVER:
 				this.gameOver = gson.fromJson(content, GameOver.class);
-				this.tellSpectators(o -> o.onGameOver(null, this.getWinningPlayers()));
+				this.tellSpectators(o -> o.onGameOver(this, this.getWinningPlayers()));
 				break;
 		}
 	}
 
 	@Override
 	public void clientDidError(Client c, ConnectionException e) {
-		this.tellObservers(o -> o.onClientError(e));
+		this.tellObservers(o -> o.onClientError(this, e));
 	}
 
 	@Override
 	public void clientWasDisconnected(Client c) {
 		if (this.gameOver == null) {
-			this.tellObservers(o -> o.onClientError(new RuntimeException("Connection closed unexpectedly")));
+			this.tellObservers(o -> o.onClientError(this, new RuntimeException("Connection closed unexpectedly")));
 		}
 	}
 
-	private void tellObservers(Consumer<Observer> tell) {
+	private void tellObservers(Consumer<ScotlandYardClientObserver> tell) {
 		Platform.runLater(() -> this.observers.forEach(tell));
 	}
 
@@ -115,11 +115,11 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 		Platform.runLater(() -> this.spectators.forEach(tell));
 	}
 
-	public void registerObserver(Observer observer) {
+	public void registerObserver(ScotlandYardClientObserver observer) {
 		this.observers.add(observer);
 	}
 
-	public void unregisterObserver(Observer observer) {
+	public void unregisterObserver(ScotlandYardClientObserver observer) {
 		this.observers.remove(observer);
 	}
 
@@ -132,14 +132,13 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 			this.client.closeBlocking();
 			System.out.println("ScotlandYardClient disconnected");
 		} catch (InterruptedException ignored) {
-
 		}
 	}
 
 	@Override
 	public List<Colour> getPlayers() {
 		if (this.gameStart == null) throw new RuntimeException("Game must be started");
-		return this.gameStart.players;
+		return this.gameStart.players.stream().map(p -> p.colour).collect(Collectors.toList());
 	}
 
 	@Override
@@ -160,7 +159,7 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 			String result = this.client.performRequest(RequestActions.GET_TICKETS.toString(), gson.toJson(request)).get();
 			return Optional.of(Integer.parseInt(result));
 		} catch (InterruptedException | ExecutionException | NumberFormatException e) {
-			this.tellObservers(o -> o.onClientError(new RuntimeException(e)));
+			this.tellObservers(o -> o.onClientError(this, new RuntimeException(e)));
 			return Optional.empty();
 		}
 	}
@@ -172,7 +171,7 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 
 	@Override
 	public Colour getCurrentPlayer() {
-		return this.gameStart.players.get(0);
+		return this.gameStart.players.get(0).colour;
 	}
 
 	@Override
