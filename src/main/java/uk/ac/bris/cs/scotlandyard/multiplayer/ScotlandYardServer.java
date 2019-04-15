@@ -1,7 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.multiplayer;
 
 import com.google.gson.Gson;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
-public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
+public class ScotlandYardServer implements Spectator, ServerDelegate {
 
 	//Creates a network and waits for it to start
 	public static Future<ScotlandYardServer> CreateScotlandYardServer(ResourceManager manager, int port, int maxPlayers, Integer turnTimer, String serverName) {
@@ -31,19 +30,36 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 	}
 
 	private Counter playerIDCounter = new Counter();
-	private class Player {
+	private List<ServerPlayer> players = new ArrayList<>();
+
+	private class ServerPlayer implements Player {
 		String name;
 		Colour colour;
 		Boolean ready;
 		WebSocket conn;
 		Integer id;
 
-		Player(WebSocket conn, String name) {
+		ServerPlayer(WebSocket conn, String name) {
 			this.conn = conn;
 			this.name = name;
 			this.colour = null;
 			this.ready = false;
 			this.id = ScotlandYardServer.this.playerIDCounter.next();
+		}
+
+		@Override
+		public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
+			Notification otherUsers = new Notification(NotificationNames.MOVE_REQUEST.toString());
+			Notification thisUser = new Notification(NotificationNames.MOVE_REQUEST.toString());
+
+			MoveRequest request = new MoveRequest(this.colour);
+			otherUsers.content = gson.toJson(request);
+			request.setMoves(moves);
+			request.currentLocation = location;
+			thisUser.content = gson.toJson(request);
+
+			conn.send(gson.toJson(thisUser));
+			ScotlandYardServer.this.players.stream().filter(p -> p != this).forEach(p -> p.conn.send(gson.toJson(otherUsers)));
 		}
 	}
 
@@ -58,7 +74,6 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 	private Date startTime;
 	private Timer timer;
 	private Gson gson = new Gson();
-	private List<Player> players = new ArrayList<>();
 	private CompletableFuture<ScotlandYardServer> startupFuture = new CompletableFuture<>();
 
 	private ScotlandYardServer(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
@@ -88,7 +103,7 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 			throw new ServerJoinException(JoinErrors.VERSION_MISMATCH.toString());
 
 		//Create the player
-		Player player = new Player(conn, clientHandshake.getFieldValue("Username"));
+		ServerPlayer player = new ServerPlayer(conn, clientHandshake.getFieldValue("Username"));
 		this.players.add(player);
 
 		//Fill the join message
@@ -105,7 +120,7 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 
 	@Override
 	public void serverReceivedRequest(Server s, Request request, Response response, WebSocket conn) {
-		Player player = this.players.stream().filter(p -> p.conn == conn).findFirst().orElse(null);
+		ServerPlayer player = this.players.stream().filter(p -> p.conn == conn).findFirst().orElse(null);
 		if (player == null) {
 			response.error = "Unknown player";
 			return;
@@ -151,13 +166,26 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 				break;
 			case GET_TICKETS:
 				TicketRequest get = this.gson.fromJson(request.data, TicketRequest.class);
-				response.data = this.model.getPlayerTickets(get.colour, get.ticket).orElse(0).toString();
+				if (get.ticket != null && get.colour != null) {
+					response.data = this.model.getPlayerTickets(get.colour, get.ticket).orElse(0).toString();
+				} else {
+					response.data = "Illegal value";
+				}
+				break;
+			case GET_LOCATION:
+				try {
+					Colour colour = Colour.valueOf(request.data);
+					response.data = this.model.getPlayerLocation(colour).orElse(0).toString();
+				} catch (IllegalArgumentException e) {
+					response.error = "Illegal value";
+				}
+				break;
 		}
 	}
 
 	@Override
 	public void serverClientDisconnected(Server s, WebSocket conn) {
-		Player player = this.players.stream().filter(p -> p.conn == conn).findFirst().orElse(null);
+		ServerPlayer player = this.players.stream().filter(p -> p.conn == conn).findFirst().orElse(null);
 		if (player == null) return;
 		this.players.remove(player);
 		//If during setup phase
@@ -224,6 +252,7 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 
 	public void onMoveMade(ScotlandYardView view, Move move) {
 		Notification notification = new Notification(NotificationNames.MOVE_MADE.toString());
+		notification.content = StringSerializer.serializeObject(move);
 		this.sendNotificationToAll(notification);
 	}
 
@@ -241,25 +270,22 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 		this.sendNotificationToAll(notification);
 	}
 
-	@Override
-	public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
-		Colour colour = view.getCurrentPlayer();
-		Player player = this.players.stream().filter(p -> p.colour == colour).findFirst().orElseThrow();
-		Notification notification = new Notification(NotificationNames.MOVE_REQUEST.toString());
-	}
-
 	@SuppressWarnings("Duplicates")		//Some of this is copied from GameSetup
 	private void startGame() {
 
 		//Find enabled colours and create ModelProperty
 		Set<Colour> enabledColours = this.players.stream().map(p -> p.colour).collect(Collectors.toSet());
-		ModelProperty setup = ModelPropertyGenerator.randomisedLocations(ModelPropertyGenerator.modelPropertyForColours(this.manager, enabledColours));
+		ModelProperty setup = ModelProperty.createDefault(this.manager);
+		setup.allPlayers().forEach(p -> {
+			p.enabledProperty().setValue(enabledColours.contains(p.colour()));
+		});
+		this.randomisePlayerLocations(setup);
 
 		List<PlayerConfiguration> configs = setup.players().stream()
 				.map(p -> new PlayerConfiguration.Builder(p.colour())
 						.at(p.location())
 						.with(p.ticketsAsMap())
-						.using(this)
+						.using(this.players.stream().filter(k -> k.colour == p.colour()).findFirst().orElseThrow())
 						.build())
 				.collect(Collectors.toList());
 
@@ -280,12 +306,28 @@ public class ScotlandYardServer implements Spectator, Player, ServerDelegate {
 		model.startRotate();
 	}
 
+	@SuppressWarnings("Duplicates")		//Some of this is copied from GameSetup
+	private void randomisePlayerLocations(ModelProperty property) {
+		ObservableList<PlayerProperty> players = property.players();
+		ArrayList<Integer> availableLocation = new ArrayList<>(StandardGame.DETECTIVE_LOCATIONS);
+		Collections.shuffle(availableLocation);
+		ArrayDeque<Integer> deque = new ArrayDeque<>(availableLocation);
+		players.forEach(p -> p.locationProperty().unbind());
+		players.filtered(PlayerProperty::randomLocation).forEach(p -> {
+			if (p.mrX()) {
+				p.locationProperty().set(StandardGame.MRX_LOCATIONS
+						.get(new Random().nextInt(StandardGame.MRX_LOCATIONS.size())));
+			} else {
+				p.locationProperty().set(deque.pop());
+			}
+		});
+	}
+
 	public void close() {
 		try {
 			this.server.stop(0);
 			System.out.println("ScotlandYardServer closed");
 		} catch (InterruptedException ignored) {
-
 		}
 	}
 

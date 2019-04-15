@@ -1,5 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.controller;
 
+import com.google.gson.Gson;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
@@ -9,6 +10,7 @@ import uk.ac.bris.cs.scotlandyard.model.Spectator;
 import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardClientObserver;
 import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardClient;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.GameStart;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.MoveRequest;
 import uk.ac.bris.cs.scotlandyard.ui.GameControl;
 import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.BoardProperty;
@@ -59,8 +61,9 @@ public class MLGGame extends BaseGame implements Spectator {
 		Game(MLGModel model, GameStart gameStart) {
 			this.model = model;
 
+			this.model.client.registerObserver(this);
 			ModelProperty setup = gameStart.generateModelProperty(manager());
-			this.controls = Arrays.asList(travelLog, ticketsCounter, status, this);
+			this.controls = Arrays.asList(board, travelLog, ticketsCounter, status, this);
 
 			controls.forEach(this.model.client::registerSpectator);
 			controls.forEach(l -> l.onGameAttach(this.model.client, setup));
@@ -68,6 +71,12 @@ public class MLGGame extends BaseGame implements Spectator {
 
 		void terminate() {
 
+		}
+
+		@Override
+		public void onMoveRequested(ScotlandYardClient client, MoveRequest request) {
+			Gson gson = new Gson();
+			System.out.println(gson.toJson(request.getMoves()));
 		}
 
 		@Override
@@ -79,6 +88,7 @@ public class MLGGame extends BaseGame implements Spectator {
 		public void onClientError(ScotlandYardClient client, RuntimeException e) {
 			MLGGame.handleFatalException(e, this.model);
 		}
+
 	}
 
 }

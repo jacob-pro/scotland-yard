@@ -23,6 +23,8 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 	private Client client;
 	private Gson gson = new Gson();
 
+	private int currentRound = NOT_STARTED;
+	private Colour currentPlayer;
 	private Join joinMessage;
 	private GameStart gameStart;
 	private GameOver gameOver;
@@ -80,10 +82,19 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 				this.tellObservers(o -> o.onGameStarted(this, this.gameStart));
 				break;
 			case MOVE_REQUEST:
+				MoveRequest request = gson.fromJson(content, MoveRequest.class);
+				this.currentPlayer = request.colour;
+				this.tellObservers(o -> o.onMoveRequested(this, request));
 				break;
 			case MOVE_MADE:
+				Move move = (Move) StringSerializer.deserializeObject(content);
+				if (move != null) this.tellSpectators(s -> s.onMoveMade(this, move));
 				break;
 			case ROUND_STARTED:
+				try {
+					this.currentRound = Integer.parseInt(content);
+					this.tellSpectators(o -> o.onRoundStarted(this, this.currentRound));
+				} catch (NumberFormatException ignored) {}
 				break;
 			case ROTATION_COMPLETE:
 				this.tellSpectators(o -> o.onRotationComplete(this));
@@ -149,7 +160,13 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 
 	@Override
 	public Optional<Integer> getPlayerLocation(Colour colour) {
-		return Optional.empty();
+		try {
+			String result = this.client.performRequest(RequestActions.GET_LOCATION.toString(), colour.toString()).get();
+			return Optional.of(Integer.parseInt(result));
+		} catch (InterruptedException | ExecutionException | NumberFormatException e) {
+			this.tellObservers(o -> o.onClientError(this, new RuntimeException(e)));
+			return Optional.empty();
+		}
 	}
 
 	@Override
@@ -171,12 +188,12 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 
 	@Override
 	public Colour getCurrentPlayer() {
-		return this.gameStart.players.get(0).colour;
+		return (this.currentPlayer != null) ? this.currentPlayer : this.gameStart.players.get(0).colour;
 	}
 
 	@Override
 	public int getCurrentRound() {
-		return 0;
+		return this.currentRound;
 	}
 
 	@Override
@@ -187,12 +204,12 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 
 	@Override
 	public Graph<Integer, Transport> getGraph() {
-		throw new RuntimeException("Unsupported");
+		throw new RuntimeException("Unsupported - find the default graph from resources");
 	}
 
 	@Override
 	public void startRotate() {
-		throw new RuntimeException("Unsupported");
+		throw new RuntimeException("Unsupported - this runs server side");
 	}
 
 	@Override
