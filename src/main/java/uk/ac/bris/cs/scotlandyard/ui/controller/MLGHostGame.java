@@ -72,7 +72,7 @@ public final class MLGHostGame implements Controller {
 			config.client = new ScotlandYardClient(localhost, port, "Host");
 			config.client.connect().get();
 		} catch (InterruptedException | URISyntaxException e) {
-			Utils.handleFatalException(e);
+			this.startScreen.getGame().handleFatalException(e, config);
 			return;
 		} catch (ExecutionException e) {
 			Utils.handleNonFatalException(e, "Couldn't start server");

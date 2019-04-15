@@ -18,6 +18,7 @@ public class MLGModel {
 			this.server.close();
 			this.server = null;
 		}
+		System.out.println("MLGModel closed");
 	}
 
 }

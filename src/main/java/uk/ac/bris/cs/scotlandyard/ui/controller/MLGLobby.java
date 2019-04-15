@@ -52,6 +52,11 @@ public final class MLGLobby implements Controller, Observer {
 	private int playerID;
 
 	MLGLobby(MLGStartScreen startScreen, MLGModel config) {
+		//Register the client/server to be cleaned up if the window gets closed
+		startScreen.getGame().getStage().setOnCloseRequest(e -> {
+			config.cleanUp();
+		});
+
 		this.startScreen = startScreen;
 		this.config = config;
 		Controller.bind(this);
@@ -129,12 +134,13 @@ public final class MLGLobby implements Controller, Observer {
 
 	@Override
 	public void onGameStarted() {
-		this.startScreen.callBack.accept(this.config);
+		this.config.client.unregisterObserver(this);
+		this.startScreen.getGame().startGame(this.config);
 	}
 
 	@Override
 	public void onClientError(RuntimeException e) {
-		Utils.handleFatalException(e);
+		this.startScreen.getGame().handleFatalException(e, this.config);
 	}
 
 	private void exitButtonAction(ActionEvent event) {

@@ -4,6 +4,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
 import uk.ac.bris.cs.scotlandyard.model.Spectator;
+import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.BoardProperty;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 
@@ -37,19 +38,26 @@ public class MLGGame extends BaseGame implements Spectator {
 //		});
 //		addMenuItem(showTests);
 
-		MLGStartScreen startScreen = new MLGStartScreen(resourceManager, this::startGame);
+		MLGStartScreen startScreen = new MLGStartScreen(this, resourceManager);
 		showOverlay(startScreen.root());
 	}
 
-	private void startGame(MLGModel config) {
+	void startGame(MLGModel config) {
 		hideOverlay();
 		try {
-			throw new RuntimeException();
+
 			//MLGGame.Game game = new MLGGame.Game(setup);
 		} catch (Exception e) {
 			e.printStackTrace();
-			handleFatalException(e);
+			this.handleFatalException(e, config);
 		}
 
 	}
+
+	void handleFatalException(Throwable throwable, MLGModel model) {
+		//Make sure the server always gets shutdown
+		model.cleanUp();
+		Utils.handleFatalException(throwable);
+	}
+
 }
