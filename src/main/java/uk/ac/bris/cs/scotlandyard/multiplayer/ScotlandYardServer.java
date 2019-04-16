@@ -263,7 +263,8 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 
 	public void onMoveMade(ScotlandYardView view, Move move) {
 		Notification notification = new Notification(NotificationNames.MOVE_MADE.toString());
-		notification.content = StringSerializer.serializeObject(move);
+		MoveMade moveMade = new MoveMade(move, view.getCurrentPlayer());
+		notification.content = gson.toJson(moveMade);
 		this.sendNotificationToAll(notification);
 	}
 

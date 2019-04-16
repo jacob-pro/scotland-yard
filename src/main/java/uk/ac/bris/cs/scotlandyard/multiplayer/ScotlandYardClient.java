@@ -15,6 +15,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+//The client will fail without attempting recovery if unexpected input is received from the server (e.g. null value)
+//If unexpected input is received as a notification the client will fail with the onClientError notification
+//If unexpected input is received for synchronous calls then they will throw
 public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 
 	private CompletableFuture<Join> connectFuture = new CompletableFuture<>();
@@ -23,8 +26,8 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 	private Client client;
 	private Gson gson = new Gson();
 
-	private int currentRound = NOT_STARTED;
-	private Colour currentPlayer;
+	private volatile int currentRound = NOT_STARTED;
+	private volatile Colour currentPlayer;
 	private GameStart gameStart;
 	private GameOver gameOver;
 
@@ -73,39 +76,41 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 
 	@Override
 	public void clientReceivedNotification(Client c, String name, String content) {
-		NotificationNames type = Arrays.stream(NotificationNames.values()).filter(v -> v.toString().equals(name)).findAny().orElse(null);
-		if (type == null) return;
-		switch (type) {
-			case LOBBY_UPDATE:
-				Lobby lobby = gson.fromJson(content, Lobby.class);
-				this.tellObservers(o -> o.onLobbyChange(this, lobby));
-				break;
-			case GAME_START:
-				this.gameStart = gson.fromJson(content, GameStart.class);
-				this.tellObservers(o -> o.onGameStarted(this, this.gameStart));
-				break;
-			case MOVE_REQUEST:
-				MoveRequest request = gson.fromJson(content, MoveRequest.class);
-				this.currentPlayer = request.colour;
-				this.tellObservers(o -> o.onMoveRequested(this, request));
-				break;
-			case MOVE_MADE:
-				Move move = (Move) StringSerializer.deserializeObject(content);
-				if (move != null) this.tellSpectators(s -> s.onMoveMade(this, move));
-				break;
-			case ROUND_STARTED:
-				try {
+		try {
+			NotificationNames type = Arrays.stream(NotificationNames.values()).filter(v -> v.toString().equals(name)).findAny().orElseThrow();
+			switch (type) {
+				case LOBBY_UPDATE:
+					Lobby lobby = gson.fromJson(content, Lobby.class);
+					this.tellObservers(o -> o.onLobbyChange(this, lobby));
+					break;
+				case GAME_START:
+					this.gameStart = gson.fromJson(content, GameStart.class);
+					this.tellObservers(o -> o.onGameStarted(this, this.gameStart));
+					break;
+				case MOVE_REQUEST:
+					MoveRequest request = gson.fromJson(content, MoveRequest.class);
+					this.currentPlayer = request.colour;
+					this.tellObservers(o -> o.onMoveRequested(this, request));
+					break;
+				case MOVE_MADE:
+					MoveMade moveMade = gson.fromJson(content, MoveMade.class);
+					this.currentPlayer = moveMade.currentPlayer;
+					this.tellSpectators(s -> s.onMoveMade(this, moveMade.getMove()));
+					break;
+				case ROUND_STARTED:
 					this.currentRound = Integer.parseInt(content);
 					this.tellSpectators(o -> o.onRoundStarted(this, this.currentRound));
-				} catch (NumberFormatException ignored) {}
-				break;
-			case ROTATION_COMPLETE:
-				this.tellSpectators(o -> o.onRotationComplete(this));
-				break;
-			case GAME_OVER:
-				this.gameOver = gson.fromJson(content, GameOver.class);
-				this.tellSpectators(o -> o.onGameOver(this, this.getWinningPlayers()));
-				break;
+					break;
+				case ROTATION_COMPLETE:
+					this.tellSpectators(o -> o.onRotationComplete(this));
+					break;
+				case GAME_OVER:
+					this.gameOver = gson.fromJson(content, GameOver.class);
+					this.tellSpectators(o -> o.onGameOver(this, this.getWinningPlayers()));
+					break;
+			}
+		} catch (RuntimeException e) {
+			this.tellObservers(o -> o.onClientError(this, e));
 		}
 	}
 

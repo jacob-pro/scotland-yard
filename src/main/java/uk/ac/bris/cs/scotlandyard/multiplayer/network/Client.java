@@ -26,6 +26,7 @@ public class Client extends WebSocketClient {
 		this.delegate = delegate;
 	}
 
+	//The string will contain a successful result, otherwise the future will complete with an exception
 	public CompletableFuture<String> performRequest(Object action, String data) {
 		CompletableFuture<String> future = new CompletableFuture<>();
 		Request request = new Request();

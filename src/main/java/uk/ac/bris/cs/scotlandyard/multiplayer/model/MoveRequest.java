@@ -30,12 +30,10 @@ public class MoveRequest {
 
 	public Set<Move> getMoves() {
 		Set<Move> moves = new HashSet<>();
-		if (this.serializedMoves != null) {
-			this.serializedMoves.forEach(s -> {
-				Move move = (Move) StringSerializer.deserializeObject(s);
-				moves.add(move);
-			});
-		}
+		this.serializedMoves.forEach(s -> {
+			Move move = (Move) StringSerializer.deserializeObject(s);
+			moves.add(move);
+		});
 		return moves;
 	}
 
