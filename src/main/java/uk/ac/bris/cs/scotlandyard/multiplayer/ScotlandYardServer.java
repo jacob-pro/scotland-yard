@@ -82,7 +82,6 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 	}
 
 	static String protocolVersionString = "1.0";
-	static String undecidedColour = "null";
 	private ScotlandYardGame model = null;
 	private int maxPlayers;
 	private Integer turnTimer;
@@ -153,7 +152,7 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 				break;
 			case SET_COLOUR:
 				try {
-					Colour colour = (request.data.equals(undecidedColour) ? null : Colour.valueOf(request.data));
+					Colour colour = ((request.data == null) ? null : Colour.valueOf(request.data));
 					if (colour != null && this.players.stream().anyMatch(p -> p.colour == colour)){
 						response.error = "Colour taken";
 					} else {
@@ -209,17 +208,15 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 
 	@Override
 	public void serverClientDisconnected(Server s, WebSocket conn) {
-		ServerPlayer player = this.players.stream().filter(p -> p.conn == conn).findFirst().orElse(null);
-		if (player == null) return;
-		this.players.remove(player);
-		//If during setup phase
-		if (this.model == null) {
-			this.updateStartTime();
-			this.sendLobbyUpdateToAll();
-		} else {
-			//the other team wins
-			this.handlePlayerExitOrTimeout(player);
-		}
+		this.players.stream().filter(p -> p.conn == conn).findFirst().ifPresent(player -> {
+			this.players.remove(player);
+			if (this.model == null) {					//If during setup phase
+				this.updateStartTime();
+				this.sendLobbyUpdateToAll();
+			} else {
+				this.handlePlayerExitOrTimeout(player);				//otherwise the other team wins
+			}
+		});
 	}
 
 	private void handlePlayerExitOrTimeout(ServerPlayer player) {
@@ -244,10 +241,11 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 		return lobby;
 	}
 
-	private Date startTime;
-	private ScheduledFuture<?> startFuture;
+
 	//Use a daemon thread so it doesn't stick around forever
 	private ScheduledExecutorService gameExecutor = Executors.newSingleThreadScheduledExecutor(new DaemonExecutorThreadFactory());
+	private ScheduledFuture<?> startFuture;
+	private Date startTime;
 
 	private void updateStartTime() {
 		if (this.model != null) return;

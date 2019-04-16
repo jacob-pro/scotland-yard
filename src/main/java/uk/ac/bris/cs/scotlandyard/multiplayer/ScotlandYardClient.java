@@ -50,7 +50,7 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<?> setColour(Colour colour) {
-		String value = (colour == null) ? ScotlandYardServer.undecidedColour : colour.toString();
+		String value = (colour == null) ? null : colour.toString();
 		return this.client.performRequest(RequestActions.SET_COLOUR, value);
 	}
 
