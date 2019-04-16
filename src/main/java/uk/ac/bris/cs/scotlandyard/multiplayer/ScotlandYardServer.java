@@ -29,7 +29,7 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 	}
 
 	private Counter playerIDCounter = new Counter();
-	private List<ServerPlayer> players = Collections.synchronizedList(new ArrayList<>());
+	private List<ServerPlayer> players = new ArrayList<>();
 
 
 	private class ServerPlayer implements Player {
@@ -223,11 +223,11 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 	}
 
 	private void handlePlayerExitOrTimeout(ServerPlayer player) {
-		Set<Colour> allPlayers = this.players.stream().map(p -> p.colour).collect(Collectors.toSet());
-		allPlayers.forEach(p -> {
-			if (p.isMrX() == player.colour.isMrX()) allPlayers.remove(p);
+		Set<Colour> winners = new HashSet<>();
+		this.model.getPlayers().forEach(p -> {
+			if (p.isMrX() != player.colour.isMrX()) winners.add(p);
 		});
-		this.onGameOver(this.model, allPlayers);
+		this.onGameOver(this.model, winners);
 	}
 
 	private Lobby currentLobby() {
