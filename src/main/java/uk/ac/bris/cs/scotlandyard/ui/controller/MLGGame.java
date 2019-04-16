@@ -18,10 +18,7 @@ import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 
 import java.net.URL;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 
 
 public class MLGGame extends BaseGame implements Spectator {
@@ -36,18 +33,18 @@ public class MLGGame extends BaseGame implements Spectator {
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		this.setupGame();
+		this.launchStartScreen();
 	}
 
-	private void setupGame() {
+	private void launchStartScreen() {
 		MLGStartScreen startScreen = new MLGStartScreen(this, resourceManager);
-		showOverlay(startScreen.root());
+		this.showOverlay(startScreen.root());
 	}
 
 	void startGame(MLGModel model, Join joinMessage, GameStart gameStart) {
-		hideOverlay();
+		this.hideOverlay();
 		try {
-			MLGGame.Game game = new MLGGame.Game(model, joinMessage, gameStart);
+			new MLGGame.Game(model, joinMessage, gameStart);
 		} catch (Exception e) {
 			MLGGame.handleFatalException(e, model);
 		}
@@ -61,6 +58,7 @@ public class MLGGame extends BaseGame implements Spectator {
 
 	private class Game implements ScotlandYardClientObserver, GameControl {
 
+		private Set<MLGBoardPlayers.MLGBoardPlayer> boardPlayers = new HashSet<>();
 		private MLGModel model;
 		private static final String NOTIFY_GAMEOVER = "notify_gameover";
 		private final List<GameControl> controls;
@@ -73,30 +71,29 @@ public class MLGGame extends BaseGame implements Spectator {
 			this.controls = Arrays.asList(board, travelLog, ticketsCounter, status, this);
 
 			gameStart.players.forEach(p -> {
+				MLGBoardPlayers.MLGBoardPlayer player;
 				if (p.playerID.equals(joinMessage.playerID)) {
-					board.setBoardPlayer(p.colour, new MLGBoardPlayers.ThisPlayer());
+					player = new MLGBoardPlayers.ThisPlayer(p.colour);
 				} else {
-					board.setBoardPlayer(p.colour, new MLGBoardPlayers.RemotePlayer(p.colour, p.username));
+					player = new MLGBoardPlayers.RemotePlayer(p.colour, p.username);
 				}
+				board.setBoardPlayer(p.colour, player);
+				this.boardPlayers.add(player);
 			});
 
 			controls.forEach(this.model.client::registerSpectator);
 			controls.forEach(l -> l.onGameAttach(this.model.client, setup));
 		}
 
-		void terminate() {
-			controls.forEach(model.client::unregisterSpectator);
-			controls.forEach(GameControl::onGameDetached);
-			this.model.cleanUp();
-		}
-
 		@Override
 		public void onMoveRequested(ScotlandYardClient client, MoveRequest request) {
-			if (request.ourMove()) {
+			MLGBoardPlayers.MLGBoardPlayer player = this.boardPlayers.stream().filter(p -> p.colour == request.colour).findFirst().orElseThrow();
+			if (player instanceof MLGBoardPlayers.ThisPlayer) {
 				board.makeMove(client, request.currentLocation, request.getMoves(), m -> {
 					this.model.client.makeMove(m);
 				});
 			}
+			player.showNotification(request.deadline);
 		}
 
 		@Override
@@ -108,9 +105,15 @@ public class MLGGame extends BaseGame implements Spectator {
 					.addAction("Main menu", () -> {
 						notifications.dismissAll();
 						terminate();
-						setupGame();
+						launchStartScreen();
 					}).create();
 			notifications.show(NOTIFY_GAMEOVER, gameOver);
+		}
+
+		void terminate() {
+			controls.forEach(model.client::unregisterSpectator);
+			controls.forEach(GameControl::onGameDetached);
+			this.model.cleanUp();
 		}
 
 		@Override

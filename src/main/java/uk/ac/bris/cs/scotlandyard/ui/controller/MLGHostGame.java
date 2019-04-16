@@ -9,6 +9,7 @@ import uk.ac.bris.cs.fxkit.BindFXML;
 import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardClient;
 import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardServer;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.Join;
 import uk.ac.bris.cs.scotlandyard.ui.Utils;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 import java.net.URISyntaxException;
@@ -65,18 +66,15 @@ public final class MLGHostGame implements Controller {
 		try {
 			config.server = ScotlandYardServer.CreateScotlandYardServer(this.startScreen.getManager(), port, maxPlayers, turnTimer, this.serverName.getText()).get();
 			config.client = new ScotlandYardClient("localhost", port, "Host");
-			config.client.connect().get();
+			Join joinMessage = config.client.connect().get();
+			MLGLobby lobby = new MLGLobby(this.startScreen, config, joinMessage);
+			this.startScreen.pushController(lobby);
 		} catch (InterruptedException | URISyntaxException e) {
 			MLGGame.handleFatalException(e, config);
-			return;
 		} catch (ExecutionException e) {
 			Utils.handleNonFatalException(e, "Couldn't start server");
 			config.cleanUp();
-			return;
 		}
-
-		MLGLobby lobby = new MLGLobby(this.startScreen, config);
-		this.startScreen.pushController(lobby);
 	}
 
 	private void cancelButtonAction(ActionEvent event) {

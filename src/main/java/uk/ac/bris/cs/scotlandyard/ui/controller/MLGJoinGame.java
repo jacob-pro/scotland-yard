@@ -85,7 +85,7 @@ public final class MLGJoinGame implements Controller {
 				//Hide spinner
 				this.progress.setVisible(false);
 				if (result != null) {
-					MLGLobby lobby = new MLGLobby(this.startScreen, config);
+					MLGLobby lobby = new MLGLobby(this.startScreen, config, result);
 					this.startScreen.pushController(lobby);
 				} else {
 					Utils.handleNonFatalException(error, "Connection error");

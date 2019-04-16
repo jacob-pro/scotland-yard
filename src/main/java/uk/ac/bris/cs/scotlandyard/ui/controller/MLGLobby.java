@@ -53,7 +53,7 @@ public final class MLGLobby implements Controller, ScotlandYardClientObserver {
 	private Join joinMessage;
 	private int playerID;
 
-	MLGLobby(MLGStartScreen startScreen, MLGModel config) {
+	MLGLobby(MLGStartScreen startScreen, MLGModel config, Join joinMessage) {
 		//Register the client/server to be cleaned up if the window gets closed
 		startScreen.getGame().getStage().setOnCloseRequest(e -> {
 			config.cleanUp();
@@ -64,7 +64,7 @@ public final class MLGLobby implements Controller, ScotlandYardClientObserver {
 		Controller.bind(this);
 		config.client.registerObserver(this);	//We need to sign up for lobby change and game start notifications
 
-		this.joinMessage = config.client.joinMessage();
+		this.joinMessage = joinMessage;
 		this.serverNameLabel.setText("Server name: " + joinMessage.serverName);
 		this.maxPlayersLabel.setText("Max players: " + joinMessage.maxPlayers.toString());
 		this.turnTimerLabel.setText("Turn timer: " + (joinMessage.turnTimer == null ? "Disabled" : joinMessage.turnTimer.toString() + " seconds"));

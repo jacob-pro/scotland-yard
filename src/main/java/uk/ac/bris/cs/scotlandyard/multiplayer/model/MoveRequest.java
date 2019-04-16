@@ -9,17 +9,16 @@ import java.util.Set;
 
 public class MoveRequest {
 
-	public Date deadline;
+	//These will be populated regardless or which player is due to move
+	public Date deadline;		//Null if there is no turn timer
 	public Colour colour;
+
+	//These will only be populated if it is for us
 	private Set<String> serializedMoves;
 	public Integer currentLocation;
 
 	public MoveRequest(Colour colour) {
 		this.colour = colour;
-	}
-
-	public boolean ourMove() {
-		return (this.currentLocation != null);
 	}
 
 	public void setMoves(Set<Move> moves) {

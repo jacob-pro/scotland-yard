@@ -4,17 +4,32 @@ import uk.ac.bris.cs.scotlandyard.model.*;
 
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.Date;
 
 
 public class MLGBoardPlayers {
 
-	public static class ThisPlayer implements Board.BoardPlayer {
+	public static abstract class MLGBoardPlayer implements Board.BoardPlayer {
+
+		protected Colour colour;
+
+		abstract public void showNotification(Date deadline);
+
+	}
+
+	public static class ThisPlayer extends MLGBoardPlayer {
 
 		private static final String NOTIFY_TIMEOUT = "notify_timeout";
 		private static final String NOTIFY_MOVE = "notify_move";
 
+		public ThisPlayer(Colour colour) {
+			this.colour = colour;
+		}
+
 		@Override
 		public void makeMove(Board.HintedBoard board, ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
+
+			board.notifications().dismissAll();
 
 			//If move is pass do it automatically
 			if (moves.size() == 1 && moves.iterator().next() instanceof PassMove) {
@@ -22,7 +37,6 @@ public class MLGBoardPlayers {
 				return;
 			}
 
-			board.notifications().dismissAll();
 			showNotificationAndAsk(location, moves, board, callback);
 		}
 
@@ -44,11 +58,15 @@ public class MLGBoardPlayers {
 				consumer.accept(move);
 			});
 		}
+
+		@Override
+		public void showNotification(Date deadline) {
+
+		}
 	}
 
-	public static class RemotePlayer implements Board.BoardPlayer {
+	public static class RemotePlayer extends MLGBoardPlayer {
 
-		private final Colour colour;
 		private final String name;
 
 		public RemotePlayer(Colour colour, String name) {
@@ -58,6 +76,11 @@ public class MLGBoardPlayers {
 
 		@Override
 		public void makeMove(Board.HintedBoard board, ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
+			//This will never be called
+		}
+
+		@Override
+		public void showNotification(Date deadline) {
 
 		}
 	}

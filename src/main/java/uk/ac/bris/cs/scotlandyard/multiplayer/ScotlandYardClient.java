@@ -25,7 +25,6 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 
 	private int currentRound = NOT_STARTED;
 	private Colour currentPlayer;
-	private Join joinMessage;
 	private GameStart gameStart;
 	private GameOver gameOver;
 
@@ -66,7 +65,6 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 	public void clientDidConnect(Client c, String data, ConnectionException e) {
 		if (e == null) {
 			Join join = gson.fromJson(data, Join.class);
-			this.joinMessage = join;
 			this.connectFuture.complete(join);
 		} else {
 			this.connectFuture.completeExceptionally(e);
@@ -139,10 +137,6 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 		this.observers.remove(observer);
 	}
 
-	public Join joinMessage() {
-		return this.joinMessage;
-	}
-
 	public void disconnect() {
 		try {
 			this.client.closeBlocking();
@@ -168,9 +162,8 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 		try {
 			String result = this.client.performRequest(RequestActions.GET_LOCATION.toString(), colour.toString()).get();
 			return Optional.of(Integer.parseInt(result));
-		} catch (InterruptedException | ExecutionException | NumberFormatException e) {
-			this.tellObservers(o -> o.onClientError(this, new RuntimeException(e)));
-			return Optional.empty();
+		} catch (InterruptedException | ExecutionException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -180,9 +173,8 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 		try {
 			String result = this.client.performRequest(RequestActions.GET_TICKETS.toString(), gson.toJson(request)).get();
 			return Optional.of(Integer.parseInt(result));
-		} catch (InterruptedException | ExecutionException | NumberFormatException e) {
-			this.tellObservers(o -> o.onClientError(this, new RuntimeException(e)));
-			return Optional.empty();
+		} catch (InterruptedException | ExecutionException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -204,7 +196,7 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 	@Override
 	public List<Boolean> getRounds() {
 		if (this.gameStart == null) throw new RuntimeException("Game must be started");
-		return this.gameStart.rounds;
+		return Collections.unmodifiableList(this.gameStart.rounds);
 	}
 
 	@Override
