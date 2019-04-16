@@ -60,7 +60,15 @@ public final class MLGHostGame implements Controller {
 		}
 
 		int maxPlayers = (int) this.maxPlayersSlider.getValue();
-		Integer turnTimer = this.turnTimerCheckBox.isSelected() ? Integer.valueOf(this.turnTimerField.getText()): null;
+		Integer turnTimer = null;
+		if (this.turnTimerCheckBox.isSelected()) {
+			try {
+				turnTimer = Integer.valueOf(this.turnTimerField.getText());
+			} catch (NumberFormatException e) {
+				Utils.handleNonFatalException(e, "Invalid turntimer");
+				return;
+			}
+		}
 
 		MLGModel config = new MLGModel();
 		try {
