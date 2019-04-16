@@ -38,6 +38,7 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 		Boolean ready;
 		WebSocket conn;
 		Integer id;
+		Consumer<Move> consumer;
 
 		ServerPlayer(WebSocket conn, String name) {
 			this.conn = conn;
@@ -49,6 +50,7 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 
 		@Override
 		public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
+			this.consumer = callback;
 			Notification otherUsers = new Notification(NotificationNames.MOVE_REQUEST.toString());
 			Notification thisUser = new Notification(NotificationNames.MOVE_REQUEST.toString());
 
@@ -163,6 +165,15 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 				}
 				break;
 			case MAKE_MOVE:
+				Object object = StringSerializer.deserializeObject(request.data);
+				if (object instanceof Move) {
+					try {
+						player.consumer.accept((Move) object);
+						response.data = "Success";
+					} catch (IllegalArgumentException e) {
+						response.error = e.getMessage();
+					}
+				}
 				break;
 			case GET_TICKETS:
 				TicketRequest get = this.gson.fromJson(request.data, TicketRequest.class);
@@ -297,7 +308,12 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 		Notification notification = new Notification(NotificationNames.GAME_START.toString());
 		GameStart gameStart = new GameStart();
 		gameStart.players = model.getPlayers().stream().map(GameStartPlayer::new).collect(toList());
-		gameStart.players.forEach(gsp -> gsp.startLocation = this.model.getPlayerLocation(gsp.colour).orElseThrow());
+		gameStart.players.forEach(gsp -> {
+			gsp.startLocation = this.model.getPlayerLocation(gsp.colour).orElseThrow();
+			ServerPlayer sp = this.players.stream().filter(p -> p.colour == gsp.colour).findFirst().orElseThrow();
+			gsp.playerID = sp.id;
+			gsp.username = sp.name;
+		});
 		gameStart.rounds = model.getRounds();
 		notification.content = gson.toJson(gameStart);
 		this.sendNotificationToAll(notification);

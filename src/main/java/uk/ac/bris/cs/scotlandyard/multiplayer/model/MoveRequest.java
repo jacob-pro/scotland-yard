@@ -18,6 +18,10 @@ public class MoveRequest {
 		this.colour = colour;
 	}
 
+	public boolean ourMove() {
+		return (this.currentLocation != null);
+	}
+
 	public void setMoves(Set<Move> moves) {
 		this.serializedMoves = new HashSet<>();
 		moves.forEach(m -> {

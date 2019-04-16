@@ -6,6 +6,8 @@ public class GameStartPlayer {
 
 	public Colour colour;
 	public Integer startLocation;
+	public Integer playerID;
+	public String username;
 
 	public GameStartPlayer(Colour colour) {
 		this.colour = colour;

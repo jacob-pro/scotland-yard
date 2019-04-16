@@ -57,6 +57,11 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 		return this.client.performRequest(RequestActions.SET_READY, ready.toString());
 	}
 
+	@SuppressWarnings("UnusedReturnValue")
+	public CompletableFuture<?> makeMove(Move move) {
+		return this.client.performRequest(RequestActions.MAKE_MOVE, StringSerializer.serializeObject(move));
+	}
+
 	@Override
 	public void clientDidConnect(Client c, String data, ConnectionException e) {
 		if (e == null) {

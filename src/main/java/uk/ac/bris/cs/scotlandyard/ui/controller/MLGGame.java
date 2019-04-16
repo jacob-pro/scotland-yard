@@ -1,15 +1,15 @@
 package uk.ac.bris.cs.scotlandyard.ui.controller;
 
-import com.google.gson.Gson;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
 import uk.ac.bris.cs.scotlandyard.model.Colour;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYardView;
 import uk.ac.bris.cs.scotlandyard.model.Spectator;
-import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardClientObserver;
 import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardClient;
+import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardClientObserver;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.GameStart;
+import uk.ac.bris.cs.scotlandyard.multiplayer.model.Join;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.MoveRequest;
 import uk.ac.bris.cs.scotlandyard.ui.GameControl;
 import uk.ac.bris.cs.scotlandyard.ui.Utils;
@@ -18,7 +18,10 @@ import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 
 import java.net.URL;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.Set;
 
 
 public class MLGGame extends BaseGame implements Spectator {
@@ -41,10 +44,10 @@ public class MLGGame extends BaseGame implements Spectator {
 		showOverlay(startScreen.root());
 	}
 
-	void startGame(MLGModel model, GameStart gameStart) {
+	void startGame(MLGModel model, Join joinMessage, GameStart gameStart) {
 		hideOverlay();
 		try {
-			MLGGame.Game game = new MLGGame.Game(model, gameStart);
+			MLGGame.Game game = new MLGGame.Game(model, joinMessage, gameStart);
 		} catch (Exception e) {
 			MLGGame.handleFatalException(e, model);
 		}
@@ -62,12 +65,20 @@ public class MLGGame extends BaseGame implements Spectator {
 		private static final String NOTIFY_GAMEOVER = "notify_gameover";
 		private final List<GameControl> controls;
 
-		Game(MLGModel model, GameStart gameStart) {
+		Game(MLGModel model, Join joinMessage, GameStart gameStart) {
 			this.model = model;
 
 			this.model.client.registerObserver(this);
 			ModelProperty setup = gameStart.generateModelProperty(manager());
 			this.controls = Arrays.asList(board, travelLog, ticketsCounter, status, this);
+
+			gameStart.players.forEach(p -> {
+				if (p.playerID.equals(joinMessage.playerID)) {
+					board.setBoardPlayer(p.colour, new MLGBoardPlayers.ThisPlayer());
+				} else {
+					board.setBoardPlayer(p.colour, new MLGBoardPlayers.RemotePlayer(p.colour, p.username));
+				}
+			});
 
 			controls.forEach(this.model.client::registerSpectator);
 			controls.forEach(l -> l.onGameAttach(this.model.client, setup));
@@ -81,8 +92,11 @@ public class MLGGame extends BaseGame implements Spectator {
 
 		@Override
 		public void onMoveRequested(ScotlandYardClient client, MoveRequest request) {
-			Gson gson = new Gson();
-			System.out.println(gson.toJson(request.getMoves()));
+			if (request.ourMove()) {
+				board.makeMove(client, request.currentLocation, request.getMoves(), m -> {
+					this.model.client.makeMove(m);
+				});
+			}
 		}
 
 		@Override

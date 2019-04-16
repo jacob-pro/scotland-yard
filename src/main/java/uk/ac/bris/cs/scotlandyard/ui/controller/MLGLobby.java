@@ -50,6 +50,7 @@ public final class MLGLobby implements Controller, ScotlandYardClientObserver {
 
 	private MLGStartScreen startScreen;
 	private MLGModel config;
+	private Join joinMessage;
 	private int playerID;
 
 	MLGLobby(MLGStartScreen startScreen, MLGModel config) {
@@ -63,7 +64,7 @@ public final class MLGLobby implements Controller, ScotlandYardClientObserver {
 		Controller.bind(this);
 		config.client.registerObserver(this);	//We need to sign up for lobby change and game start notifications
 
-		Join joinMessage = config.client.joinMessage();
+		this.joinMessage = config.client.joinMessage();
 		this.serverNameLabel.setText("Server name: " + joinMessage.serverName);
 		this.maxPlayersLabel.setText("Max players: " + joinMessage.maxPlayers.toString());
 		this.turnTimerLabel.setText("Turn timer: " + (joinMessage.turnTimer == null ? "Disabled" : joinMessage.turnTimer.toString() + " seconds"));
@@ -136,7 +137,7 @@ public final class MLGLobby implements Controller, ScotlandYardClientObserver {
 	@Override
 	public void onGameStarted(ScotlandYardClient client, GameStart gameStart) {
 		client.unregisterObserver(this);
-		this.startScreen.getGame().startGame(this.config, gameStart);
+		this.startScreen.getGame().startGame(this.config, this.joinMessage, gameStart);
 	}
 
 	@Override
