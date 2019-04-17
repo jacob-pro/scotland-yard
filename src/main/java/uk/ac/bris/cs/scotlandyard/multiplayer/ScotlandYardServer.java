@@ -18,6 +18,7 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+//TODO: check for thread safety when accessing properties, I might have forgotten some synchronisation
 public class ScotlandYardServer implements Spectator, ServerDelegate {
 
 	//Creates a network and waits for it to start
