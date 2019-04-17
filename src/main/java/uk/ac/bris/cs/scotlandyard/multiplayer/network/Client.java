@@ -54,6 +54,7 @@ public class Client extends WebSocketClient {
 			public void accept(Response message) {
 				CompletableFuture<String> future = Client.this.pendingRequests.get(message.streamID);
 				if (future != null) {
+					Client.this.pendingRequests.remove(message.streamID);
 					if (message.error == null) {
 						future.complete(message.data);
 					} else {

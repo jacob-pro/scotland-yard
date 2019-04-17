@@ -64,10 +64,14 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 
 				this.consumer = m -> {
 					future.cancel(false);
+					this.consumer = null;
 					callback.accept(m);
 				};
 			} else {
-				this.consumer = callback;
+				this.consumer = m -> {
+					this.consumer = null;
+					callback.accept(m);
+				};
 			}
 			otherUsers.content = gson.toJson(request);
 			request.setMoves(moves);
@@ -176,8 +180,12 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 				Object object = StringSerializer.deserializeObject(request.data);
 				if (object instanceof Move) {
 					try {
-						player.consumer.accept((Move) object);
-						response.data = "Success";
+						if (player.consumer != null) {
+							player.consumer.accept((Move) object);
+							response.data = "Success";
+						} else {
+							response.data = "Illegal operation";
+						}
 					} catch (IllegalArgumentException e) {
 						response.error = e.getMessage();		//Illegal move
 					}
