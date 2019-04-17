@@ -23,8 +23,8 @@ import uk.ac.bris.cs.scotlandyard.multiplayer.model.Lobby;
 import uk.ac.bris.cs.scotlandyard.multiplayer.model.LobbyPlayer;
 import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @BindFXML(value = "layout/MLGLobby.fxml", css = "style/mlg.css")
@@ -123,9 +123,10 @@ public final class MLGLobby implements Controller, ScotlandYardClientObserver {
 		}
 		if (lobby.startTime != null) {
 			this.countdown = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
-				Date now = new Date();
-				long remaining = (lobby.startTime.getTime() - now.getTime()) / 1000;
-				this.readyButton.setText("Starting in " + remaining);
+				java.time.Duration duration = java.time.Duration.between(Instant.now(), lobby.startTime);
+				long seconds = duration.getSeconds() + 1;
+				if (seconds < 0) seconds = 0;
+				this.readyButton.setText("Starting in " + seconds);
 			}));
 			this.countdown.setCycleCount(Timeline.INDEFINITE);
 			this.countdown.play();

@@ -18,8 +18,6 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
-
 public class ScotlandYardServer implements Spectator, ServerDelegate {
 
 	//Creates a network and waits for it to start
@@ -237,7 +235,7 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 			player.name = p.name;
 			player.id = p.id;
 			return player;
-		}).collect(toList());
+		}).collect(Collectors.toList());
 		return lobby;
 	}
 
@@ -245,16 +243,14 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 	//Use a daemon thread so it doesn't stick around forever
 	private ScheduledExecutorService gameExecutor = Executors.newSingleThreadScheduledExecutor(new DaemonExecutorThreadFactory());
 	private ScheduledFuture<?> startFuture;
-	private Date startTime;
+	private Instant startTime;
 
 	private void updateStartTime() {
 		if (this.model != null) return;
 		if (this.players.stream().allMatch(p -> p.ready) && this.players.stream().filter(p -> p.colour != null ).count() >= 2
 				&& this.players.stream().anyMatch(p -> p.colour == Colour.BLACK)) {
-			Calendar cal = Calendar.getInstance();
-			int startDelay = 3;
-			cal.add(Calendar.SECOND, startDelay);
-			this.startTime = cal.getTime();
+			int startDelay = 10;
+			this.startTime = Instant.now().plusSeconds(startDelay);
 			this.startFuture = gameExecutor.schedule(this::startGame, startDelay, TimeUnit.SECONDS);
 		} else {
 			if (this.startFuture != null) this.startFuture.cancel(false);
@@ -307,9 +303,7 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 		//Find enabled colours and create ModelProperty
 		Set<Colour> enabledColours = this.players.stream().map(p -> p.colour).collect(Collectors.toSet());
 		ModelProperty setup = ModelProperty.createDefault(this.manager);
-		setup.allPlayers().forEach(p -> {
-			p.enabledProperty().setValue(enabledColours.contains(p.colour()));
-		});
+		setup.allPlayers().forEach(p -> p.enabledProperty().setValue(enabledColours.contains(p.colour())));
 		this.randomisePlayerLocations(setup);
 
 		List<PlayerConfiguration> configs = setup.players().stream()
@@ -321,13 +315,13 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 				.collect(Collectors.toList());
 
 		PlayerConfiguration mrX = configs.stream().filter(p -> p.colour.isMrX()).findFirst().orElseThrow(AssertionError::new);
-		List<PlayerConfiguration> detectives = configs.stream().filter(p -> p.colour.isDetective()).collect(toList());
+		List<PlayerConfiguration> detectives = configs.stream().filter(p -> p.colour.isDetective()).collect(Collectors.toList());
 
 		this.model = new ScotlandYardModel(setup.revealRounds(), setup.graphProperty().get(), mrX, detectives.get(0), detectives.stream().skip(1).toArray(PlayerConfiguration[]::new));
 
 		Notification notification = new Notification(NotificationNames.GAME_START.toString());
 		GameStart gameStart = new GameStart();
-		gameStart.players = model.getPlayers().stream().map(GameStartPlayer::new).collect(toList());
+		gameStart.players = model.getPlayers().stream().map(GameStartPlayer::new).collect(Collectors.toList());
 		gameStart.players.forEach(gsp -> {
 			ServerPlayer sp = this.players.stream().filter(p -> p.colour == gsp.colour).findFirst().orElseThrow(AssertionError::new);
 			gsp.playerID = sp.id;

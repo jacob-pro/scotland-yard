@@ -55,6 +55,7 @@ class MLGBoardPlayers {
 		}
 
 		@Override
+		@SuppressWarnings("Duplicates")		//Notification copied from BoardPlayers
 		public void makeMoveReplacementHack(Notifications notifications, Instant deadline) {
 
 			notifications.dismissAll();
