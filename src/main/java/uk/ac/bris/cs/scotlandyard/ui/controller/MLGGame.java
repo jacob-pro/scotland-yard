@@ -1,5 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.controller;
 
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
@@ -88,12 +89,15 @@ public class MLGGame extends BaseGame implements Spectator {
 		@Override
 		public void onMoveRequested(ScotlandYardClient client, MoveRequest request) {
 			MLGBoardPlayers.MLGBoardPlayer player = this.boardPlayers.stream().filter(p -> p.colour == request.colour).findFirst().orElseThrow();
+			//Only ThisPlayer is actually supported by the Board
 			if (player instanceof MLGBoardPlayers.ThisPlayer) {
 				board.makeMove(client, request.currentLocation, request.getMoves(), m -> {
 					this.model.client.makeMove(m);
 				});
 			}
-			player.showNotification(request.deadline);
+			Platform.runLater(() -> {		//We need this to happen after board calls their makeMove
+				player.makeMoveReplacementHack(notifications, request.deadline);
+			});
 		}
 
 		@Override

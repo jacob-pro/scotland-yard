@@ -90,7 +90,6 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 				case MOVE_REQUEST:
 					MoveRequest request = gson.fromJson(content, MoveRequest.class);
 					this.currentPlayer = request.colour;
-					System.out.println(content);
 					this.tellObservers(o -> o.onMoveRequested(this, request));
 					break;
 				case MOVE_MADE:
@@ -107,7 +106,6 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 					break;
 				case GAME_OVER:
 					this.gameOver = gson.fromJson(content, GameOver.class);
-					System.out.println("game over " + content);
 					this.tellSpectators(o -> o.onGameOver(this, this.getWinningPlayers()));
 					break;
 			}

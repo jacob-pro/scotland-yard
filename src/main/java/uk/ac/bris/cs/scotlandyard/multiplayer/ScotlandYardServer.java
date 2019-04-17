@@ -12,6 +12,7 @@ import uk.ac.bris.cs.scotlandyard.ui.model.ModelProperty;
 import uk.ac.bris.cs.scotlandyard.ui.model.PlayerProperty;
 
 import java.net.InetSocketAddress;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -55,9 +56,8 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 
 			MoveRequest request = new MoveRequest(this.colour);
 			if (ScotlandYardServer.this.turnTimer != null) {
-				Calendar cal = Calendar.getInstance();
-				cal.add(Calendar.SECOND, ScotlandYardServer.this.turnTimer);
-				request.deadline = cal.getTime();
+
+				request.deadline = Instant.now().plusSeconds(ScotlandYardServer.this.turnTimer);
 
 				ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new DaemonExecutorThreadFactory());
 				ScheduledFuture<?> future = executor.schedule(() -> {
