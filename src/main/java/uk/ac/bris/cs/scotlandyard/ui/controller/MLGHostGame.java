@@ -16,7 +16,7 @@ import java.net.URISyntaxException;
 import java.util.concurrent.ExecutionException;
 
 @BindFXML(value = "layout/MLGHostGame.fxml", css = "style/mlg.css")
-public final class MLGHostGame implements Controller {
+class MLGHostGame implements Controller {
 
 	static Integer defaultPort = 25566;
 

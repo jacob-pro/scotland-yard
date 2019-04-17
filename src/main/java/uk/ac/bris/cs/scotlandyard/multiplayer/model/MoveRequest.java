@@ -23,9 +23,7 @@ public class MoveRequest {
 
 	public void setMoves(Set<Move> moves) {
 		this.serializedMoves = new HashSet<>();
-		moves.forEach(m -> {
-			this.serializedMoves.add(StringSerializer.serializeObject(m));
-		});
+		moves.forEach(m -> this.serializedMoves.add(StringSerializer.serializeObject(m)));
 	}
 
 	public Set<Move> getMoves() {

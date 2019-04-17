@@ -17,7 +17,7 @@ import uk.ac.bris.cs.scotlandyard.ui.model.MLGModel;
 import java.net.URISyntaxException;
 
 @BindFXML(value = "layout/MLGJoinGame.fxml", css = "style/mlg.css")
-public final class MLGJoinGame implements Controller {
+class MLGJoinGame implements Controller {
 
 	@FXML private StackPane root;
 	@FXML private TextField nameField;
@@ -59,7 +59,7 @@ public final class MLGJoinGame implements Controller {
 		if (address.contains(":")) {
 			host = address.substring(0, address.lastIndexOf(":"));
 			try {
-				port = Integer.parseInt(address.substring(address.lastIndexOf(":")+1, address.length()));
+				port = Integer.parseInt(address.substring(address.lastIndexOf(":")+1));
 			} catch (NumberFormatException e) {
 				Utils.handleNonFatalException(e, "Invalid address");
 				return;
@@ -80,19 +80,17 @@ public final class MLGJoinGame implements Controller {
 
 		//Show progress spinner
 		this.progress.setVisible(true);
-		config.client.connect().whenComplete((result, error) -> {
-			Platform.runLater(() -> {
-				//Hide spinner
-				this.progress.setVisible(false);
-				if (result != null) {
-					MLGLobby lobby = new MLGLobby(this.startScreen, config, result);
-					this.startScreen.pushController(lobby);
-				} else {
-					Utils.handleNonFatalException(error, "Connection error");
-					config.cleanUp();
-				}
-			});
-		});
+		config.client.connect().whenComplete((result, error) -> Platform.runLater(() -> {
+			//Hide spinner
+			this.progress.setVisible(false);
+			if (result != null) {
+				MLGLobby lobby = new MLGLobby(this.startScreen, config, result);
+				this.startScreen.pushController(lobby);
+			} else {
+				Utils.handleNonFatalException(error, "Connection error");
+				config.cleanUp();
+			}
+		}));
 	}
 
 	private void cancelButtonAction(ActionEvent event) {

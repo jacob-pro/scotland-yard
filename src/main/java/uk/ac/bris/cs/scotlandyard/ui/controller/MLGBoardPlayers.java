@@ -18,7 +18,7 @@ class MLGBoardPlayers {
 
 	public static abstract class MLGBoardPlayer implements Board.BoardPlayer {
 
-		protected Colour colour;
+		Colour colour;
 
 		abstract public void makeMoveReplacementHack(Notifications notifications, Instant deadline);
 

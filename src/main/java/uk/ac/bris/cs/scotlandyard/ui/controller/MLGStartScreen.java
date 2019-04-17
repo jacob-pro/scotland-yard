@@ -10,7 +10,7 @@ import uk.ac.bris.cs.fxkit.Controller;
 import uk.ac.bris.cs.scotlandyard.ResourceManager;
 
 @BindFXML(value = "layout/MLGStartScreen.fxml", css = "style/mlg.css")
-public final class MLGStartScreen implements Controller {
+class MLGStartScreen implements Controller {
 
 	@FXML private StackPane stackPane;
 	@FXML private Button joinButton;

@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @BindFXML(value = "layout/MLGLobby.fxml", css = "style/mlg.css")
-public final class MLGLobby implements Controller, ScotlandYardClientObserver {
+class MLGLobby implements Controller, ScotlandYardClientObserver {
 
 	@FXML private StackPane root;
 	@FXML private Label serverNameLabel;
@@ -55,9 +55,7 @@ public final class MLGLobby implements Controller, ScotlandYardClientObserver {
 
 	MLGLobby(MLGStartScreen startScreen, MLGModel config, Join joinMessage) {
 		//Register the client/server to be cleaned up if the window gets closed
-		startScreen.getGame().getStage().setOnCloseRequest(e -> {
-			config.cleanUp();
-		});
+		startScreen.getGame().getStage().setOnCloseRequest(e -> config.cleanUp());
 
 		this.startScreen = startScreen;
 		this.config = config;
@@ -81,7 +79,7 @@ public final class MLGLobby implements Controller, ScotlandYardClientObserver {
 		this.readyColumn.setCellValueFactory(p -> new ReadOnlyStringWrapper(p.getValue().ready ? "Yes" : "No"));
 
 		//Configure colour picker
-		this.colourChoice.setConverter(new StringConverter<Colour>() {
+		this.colourChoice.setConverter(new StringConverter<>() {
 			@Override
 			public String toString(Colour colour) {
 				return (colour == null ? "Undecided" : colour.toString());
@@ -96,13 +94,11 @@ public final class MLGLobby implements Controller, ScotlandYardClientObserver {
 		this.colourChoice.setItems(FXCollections.observableList(items));
 
 		//Fetch the lobby
-		this.config.client.getLobby().whenComplete((result, error) -> {
-			Platform.runLater(() -> {
-				if (error == null) {
-					this.onLobbyChange(this.config.client, result);
-				}
-			});
-		});
+		this.config.client.getLobby().whenComplete((result, error) -> Platform.runLater(() -> {
+			if (error == null) {
+				this.onLobbyChange(this.config.client, result);
+			}
+		}));
 	}
 
 	@Override

@@ -91,9 +91,7 @@ public class MLGGame extends BaseGame implements Spectator {
 			MLGBoardPlayers.MLGBoardPlayer player = this.boardPlayers.stream().filter(p -> p.colour == request.colour).findFirst().orElseThrow();
 			//Only ThisPlayer is actually supported by the Board
 			if (player instanceof MLGBoardPlayers.ThisPlayer) {
-				board.makeMove(client, request.currentLocation, request.getMoves(), m -> {
-					this.model.client.makeMove(m);
-				});
+				board.makeMove(client, request.currentLocation, request.getMoves(), m -> this.model.client.makeMove(m));
 			}
 			Platform.runLater(() -> {		//We need this to happen after board calls their makeMove
 				player.makeMoveReplacementHack(notifications, request.deadline);
