@@ -1,7 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.model;
 
 import java.util.*;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import uk.ac.bris.cs.gamekit.graph.Edge;
