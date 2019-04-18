@@ -20,7 +20,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	private int currentRound = NOT_STARTED;
 	private int lastKnownMrXLocation = 0;		//Hidden location is apparently 0
 
-	private boolean listContainsDuplicates(List list) {
+	private boolean listContainsDuplicates(List<?> list) {
 		return list.size() != list.stream().distinct().count();
 	}
 
