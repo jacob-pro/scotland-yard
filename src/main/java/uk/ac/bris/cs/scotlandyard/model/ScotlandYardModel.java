@@ -20,10 +20,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	private int currentRound = NOT_STARTED;
 	private int lastKnownMrXLocation = 0;		//Hidden location is apparently 0
 
-	private boolean listContainsDuplicates(List<?> list) {
-		return list.size() != list.stream().distinct().count();
-	}
-
 	private int remainingRounds() {
 		return rounds.size() - this.currentRound;
 	}
@@ -62,8 +58,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 
 		//Validate the player configurations
-		if(listContainsDuplicates(playerConfigurations.stream().map(c -> c.colour).collect(Collectors.toList()))) throw new IllegalArgumentException("Duplicate player colour");
-		if(listContainsDuplicates(playerConfigurations.stream().map(c -> c.location).collect(Collectors.toList()))) throw new IllegalArgumentException("Duplicate player colour");
+		if(ListHelper.containsDuplicates(playerConfigurations.stream().map(c -> c.colour).collect(Collectors.toList()))) throw new IllegalArgumentException("Duplicate player colour");
+		if(ListHelper.containsDuplicates(playerConfigurations.stream().map(c -> c.location).collect(Collectors.toList()))) throw new IllegalArgumentException("Duplicate player colour");
 
 		playerConfigurations.forEach(cfg -> {
 			// Check player ticket maps
