@@ -7,7 +7,7 @@ public class ListCycler<T> {
 	private List<T> list;
 	private int currentIndex = 0;
 
-	ListCycler(List<T> list) {
+	public ListCycler(List<T> list) {
 		this.list = list;
 	}
 
