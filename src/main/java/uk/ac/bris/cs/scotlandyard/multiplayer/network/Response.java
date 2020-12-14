@@ -2,16 +2,16 @@ package uk.ac.bris.cs.scotlandyard.multiplayer.network;
 
 public class Response extends Message {
 
-	int streamID;
-	public String data;
-	public String error;
+    int streamID;
+    public String data;
+    public String error;
 
-	Response() {
-		this.messageType = MessageType.RESPONSE;
-	}
+    Response() {
+        this.messageType = MessageType.RESPONSE;
+    }
 
-	@Override
-	public void accept(MessageVisitor visitor) {
-		visitor.accept(this);
-	}
+    @Override
+    public void accept(MessageVisitor visitor) {
+        visitor.accept(this);
+    }
 }

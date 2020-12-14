@@ -6,6 +6,6 @@ import java.util.Set;
 
 public class GameOver {
 
-	public Set<Colour> winningPlayers;
+    public Set<Colour> winningPlayers;
 
 }

@@ -4,24 +4,24 @@ import java.util.Collections;
 import java.util.List;
 
 public class ListCycler<T> {
-	private List<T> list;
-	private int currentIndex = 0;
+    private List<T> list;
+    private int currentIndex = 0;
 
-	public ListCycler(List<T> list) {
-		this.list = list;
-	}
+    public ListCycler(List<T> list) {
+        this.list = list;
+    }
 
-	public T current() {
-		return this.list.get(this.currentIndex);
-	}
+    public T current() {
+        return this.list.get(this.currentIndex);
+    }
 
-	@SuppressWarnings("UnusedReturnValue")
-	public T next() {
-		this.currentIndex = (this.currentIndex + 1) % this.list.size();
-		return this.current();
-	}
+    @SuppressWarnings("UnusedReturnValue")
+    public T next() {
+        this.currentIndex = (this.currentIndex + 1) % this.list.size();
+        return this.current();
+    }
 
-	public List<T> list() {
-		return Collections.unmodifiableList(this.list);
-	}
+    public List<T> list() {
+        return Collections.unmodifiableList(this.list);
+    }
 }

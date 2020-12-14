@@ -5,10 +5,10 @@ import java.util.concurrent.ThreadFactory;
 
 public class DaemonExecutorThreadFactory implements ThreadFactory {
 
-	@Override
-	public Thread newThread(Runnable runnable) {
-		Thread t = Executors.defaultThreadFactory().newThread(runnable);
-		t.setDaemon(true);
-		return t;
-	}
+    @Override
+    public Thread newThread(Runnable runnable) {
+        Thread t = Executors.defaultThreadFactory().newThread(runnable);
+        t.setDaemon(true);
+        return t;
+    }
 }

@@ -3,9 +3,9 @@ package uk.ac.bris.cs.scotlandyard.multiplayer.model;
 //Data that the server will send in the connection handshake
 public class Join {
 
-	public String serverName;
-	public Integer maxPlayers;
-	public Integer turnTimer;
-	public Integer playerID;
+    public String serverName;
+    public Integer maxPlayers;
+    public Integer turnTimer;
+    public Integer playerID;
 
 }

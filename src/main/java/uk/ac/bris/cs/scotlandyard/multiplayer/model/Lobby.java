@@ -10,18 +10,18 @@ import java.util.stream.Collectors;
 
 public class Lobby {
 
-	public List<LobbyPlayer> players;
-	public Instant startTime;
+    public List<LobbyPlayer> players;
+    public Instant startTime;
 
-	//List of colours that are not in use by any other players
-	public List<Colour> availableColours() {
-		List<Colour> available = new ArrayList<>(Arrays.asList(Colour.values()));
-		available.removeAll(this.takenColours());
-		return available;
-	}
+    //List of colours that are not in use by any other players
+    public List<Colour> availableColours() {
+        List<Colour> available = new ArrayList<>(Arrays.asList(Colour.values()));
+        available.removeAll(this.takenColours());
+        return available;
+    }
 
-	//List of colours which are in use by other players
-	public List<Colour> takenColours() {
-		return this.players.stream().filter(p -> p.colour != null).map(p -> p.colour).collect(Collectors.toList());
-	}
+    //List of colours which are in use by other players
+    public List<Colour> takenColours() {
+        return this.players.stream().filter(p -> p.colour != null).map(p -> p.colour).collect(Collectors.toList());
+    }
 }
