@@ -18,7 +18,6 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-//TODO: check for thread safety when accessing properties, I might have forgotten some synchronisation
 public class ScotlandYardServer implements Spectator, ServerDelegate {
 
 	//Creates a network and waits for it to start
@@ -28,9 +27,8 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 		return server.startupFuture;
 	}
 
-	private Counter playerIDCounter = new Counter();
-	private List<ServerPlayer> players = new ArrayList<>();
-
+	private final Counter playerIDCounter = new Counter();
+	private final List<ServerPlayer> players = new ArrayList<>();
 
 	private class ServerPlayer implements Player {
 		String name;
@@ -49,7 +47,7 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 		}
 
 		@Override
-		public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
+		public synchronized void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
 			Notification otherUsers = new Notification(NotificationNames.MOVE_REQUEST.toString());
 			Notification thisUser = new Notification(NotificationNames.MOVE_REQUEST.toString());
 
@@ -84,15 +82,15 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 		}
 	}
 
-	static String protocolVersionString = "1.0";
-	private ScotlandYardGame model = null;
-	private int maxPlayers;
-	private Integer turnTimer;
-	private String serverName;
-	private ResourceManager manager;
-	private Server server;
-	private Gson gson = new Gson();
-	private CompletableFuture<ScotlandYardServer> startupFuture = new CompletableFuture<>();
+	final static String protocolVersionString = "1.0";
+	private ScotlandYardGame model;
+	private final int maxPlayers;
+	private final Integer turnTimer;
+	private final String serverName;
+	private final ResourceManager manager;
+	private final Server server;
+	private final Gson gson = new Gson();
+	private final CompletableFuture<ScotlandYardServer> startupFuture = new CompletableFuture<>();
 
 	private ScotlandYardServer(ResourceManager manager, InetSocketAddress address, int maxPlayers, Integer turnTimer, String serverName) {
 		this.manager = manager;
@@ -113,7 +111,7 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 	}
 
 	@Override
-	public String serverReceivedConnection(Server s, ClientHandshake clientHandshake, WebSocket conn) throws ServerJoinException {
+	public synchronized String serverReceivedConnection(Server s, ClientHandshake clientHandshake, WebSocket conn) throws ServerJoinException {
 		//Check that the player is able to join
 		if (this.model != null) throw new ServerJoinException(JoinErrors.GAME_STARTED.toString());
 		if (this.players.size() >= this.maxPlayers) throw new ServerJoinException(JoinErrors.SERVER_FULL.toString());
@@ -137,7 +135,7 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 	}
 
 	@Override
-	public void serverReceivedRequest(Server s, Request request, Response response, WebSocket conn) {
+	public synchronized void serverReceivedRequest(Server s, Request request, Response response, WebSocket conn) {
 		ServerPlayer player = this.players.stream().filter(p -> p.conn == conn).findFirst().orElse(null);
 		if (player == null) {
 			response.error = "Unknown player";
@@ -214,7 +212,7 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 	}
 
 	@Override
-	public void serverClientDisconnected(Server s, WebSocket conn) {
+	public synchronized void serverClientDisconnected(Server s, WebSocket conn) {
 		this.players.stream().filter(p -> p.conn == conn).findFirst().ifPresent(player -> {
 			this.players.remove(player);
 			if (this.model == null) {					//If during setup phase
@@ -250,7 +248,7 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 
 
 	//Use a daemon thread so it doesn't stick around forever
-	private ScheduledExecutorService gameExecutor = Executors.newSingleThreadScheduledExecutor(new DaemonExecutorThreadFactory());
+	private final ScheduledExecutorService gameExecutor = Executors.newSingleThreadScheduledExecutor(new DaemonExecutorThreadFactory());
 	private ScheduledFuture<?> startFuture;
 	private Instant startTime;
 
@@ -279,26 +277,26 @@ public class ScotlandYardServer implements Spectator, ServerDelegate {
 	}
 
 	@Override
-	public void onRotationComplete(ScotlandYardView view) {
+	public synchronized void onRotationComplete(ScotlandYardView view) {
 		if (!view.isGameOver()) this.model.startRotate();
 		Notification notification = new Notification(NotificationNames.ROTATION_COMPLETE.toString());
 		this.sendNotificationToAll(notification);
 	}
 
-	public void onMoveMade(ScotlandYardView view, Move move) {
+	public synchronized void onMoveMade(ScotlandYardView view, Move move) {
 		Notification notification = new Notification(NotificationNames.MOVE_MADE.toString());
 		MoveMade moveMade = new MoveMade(move, view.getCurrentPlayer());
 		notification.content = gson.toJson(moveMade);
 		this.sendNotificationToAll(notification);
 	}
 
-	public void onRoundStarted(ScotlandYardView view, int round) {
+	public synchronized void onRoundStarted(ScotlandYardView view, int round) {
 		Notification notification = new Notification(NotificationNames.ROUND_STARTED.toString());
 		notification.content = String.valueOf(round);
 		this.sendNotificationToAll(notification);
 	}
 
-	public void onGameOver(ScotlandYardView view, Set<Colour> winningPlayers) {
+	public synchronized void onGameOver(ScotlandYardView view, Set<Colour> winningPlayers) {
 		Notification notification = new Notification(NotificationNames.GAME_OVER.toString());
 		GameOver gameOver = new GameOver();
 		gameOver.winningPlayers = winningPlayers;

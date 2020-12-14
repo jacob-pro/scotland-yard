@@ -14,7 +14,7 @@
         <runSuite>**/ModelTest.class</runSuite>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skipAfter>0</skipAfter>
-        <werror>true</werror>
+        <werror>false</werror>
     </properties>
 
     <repositories>
@@ -185,9 +185,26 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
-                <configuration>
-                    <mainClass>uk.ac.bris.cs.scotlandyard.Main</mainClass>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>original</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>uk.ac.bris.cs.scotlandyard.Main</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>multiplayer</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>uk.ac.bris.cs.scotlandyard.MLGMain</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>

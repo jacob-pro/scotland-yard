@@ -20,14 +20,15 @@ import java.util.stream.Collectors;
 //If unexpected input is received for synchronous calls then they will throw
 public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 
-	private CompletableFuture<Join> connectFuture = new CompletableFuture<>();
-	private Set<ScotlandYardClientObserver> observers = new HashSet<>();
-	private Set<Spectator> spectators = new HashSet<>();
-	private Client client;
-	private Gson gson = new Gson();
+	private final CompletableFuture<Join> connectFuture = new CompletableFuture<>();
+	private final Set<ScotlandYardClientObserver> observers = new HashSet<>();
+	private final Set<Spectator> spectators = new HashSet<>();
+	private final Client client;
+	private final Gson gson = new Gson();
 
-	private volatile int currentRound = NOT_STARTED;
-	private volatile Colour currentPlayer;
+	// Access should be synchronised between Websocket and UI threads
+	private int currentRound = NOT_STARTED;
+	private Colour currentPlayer;
 	private GameStart gameStart;
 	private GameOver gameOver;
 
@@ -75,7 +76,7 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 	}
 
 	@Override
-	public void clientReceivedNotification(Client c, String name, String content) {
+	public synchronized void clientReceivedNotification(Client c, String name, String content) {
 		try {
 			NotificationNames type = Arrays.stream(NotificationNames.values()).filter(v -> v.toString().equals(name)).findAny().orElseThrow();
 			switch (type) {
@@ -120,25 +121,25 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 	}
 
 	@Override
-	public void clientWasDisconnected(Client c) {
+	public synchronized void clientWasDisconnected(Client c) {
 		if (this.gameOver == null) {
 			this.tellObservers(o -> o.onClientError(this, new RuntimeException("Connection closed unexpectedly")));
 		}
 	}
 
-	private void tellObservers(Consumer<ScotlandYardClientObserver> tell) {
+	private synchronized void tellObservers(Consumer<ScotlandYardClientObserver> tell) {
 		Platform.runLater(() -> this.observers.forEach(tell));
 	}
 
-	private void tellSpectators(Consumer<Spectator> tell) {
+	private synchronized void tellSpectators(Consumer<Spectator> tell) {
 		Platform.runLater(() -> this.spectators.forEach(tell));
 	}
 
-	public void registerObserver(ScotlandYardClientObserver observer) {
+	public synchronized void registerObserver(ScotlandYardClientObserver observer) {
 		this.observers.add(observer);
 	}
 
-	public void unregisterObserver(ScotlandYardClientObserver observer) {
+	public synchronized void unregisterObserver(ScotlandYardClientObserver observer) {
 		this.observers.remove(observer);
 	}
 
@@ -151,13 +152,13 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 	}
 
 	@Override
-	public List<Colour> getPlayers() {
+	public synchronized List<Colour> getPlayers() {
 		if (this.gameStart == null) throw new RuntimeException("Game must be started");
 		return this.gameStart.players.stream().map(p -> p.colour).collect(Collectors.toList());
 	}
 
 	@Override
-	public Set<Colour> getWinningPlayers() {
+	public synchronized Set<Colour> getWinningPlayers() {
 		if (this.gameOver == null) return Collections.emptySet();
 		return this.gameOver.winningPlayers;
 	}
@@ -184,22 +185,22 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 	}
 
 	@Override
-	public boolean isGameOver() {
+	public synchronized boolean isGameOver() {
 		return (this.gameOver != null);
 	}
 
 	@Override
-	public Colour getCurrentPlayer() {
+	public synchronized Colour getCurrentPlayer() {
 		return (this.currentPlayer != null) ? this.currentPlayer : this.gameStart.players.get(0).colour;
 	}
 
 	@Override
-	public int getCurrentRound() {
+	public synchronized int getCurrentRound() {
 		return this.currentRound;
 	}
 
 	@Override
-	public List<Boolean> getRounds() {
+	public synchronized List<Boolean> getRounds() {
 		if (this.gameStart == null) throw new RuntimeException("Game must be started");
 		return Collections.unmodifiableList(this.gameStart.rounds);
 	}
@@ -215,17 +216,17 @@ public class ScotlandYardClient implements ClientDelegate, ScotlandYardGame {
 	}
 
 	@Override
-	public void registerSpectator(Spectator spectator) {
+	public synchronized void registerSpectator(Spectator spectator) {
 		this.spectators.add(spectator);
 	}
 
 	@Override
-	public void unregisterSpectator(Spectator spectator) {
+	public synchronized void unregisterSpectator(Spectator spectator) {
 		this.spectators.remove(spectator);
 	}
 
 	@Override
-	public Collection<Spectator> getSpectators() {
+	public synchronized Collection<Spectator> getSpectators() {
 		return Collections.unmodifiableSet(this.spectators);
 	}
 
