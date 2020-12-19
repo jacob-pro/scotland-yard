@@ -23,3 +23,11 @@ mvn clean compile exec:java@original
 ```
 mvn clean compile exec:java@multiplayer
 ```
+
+## Screenshots
+
+![alt text](./screenshots/main_screen.png)
+
+![alt text](./screenshots/server.png)
+
+![alt text](./screenshots/lobby.png)
