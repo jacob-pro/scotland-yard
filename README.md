@@ -2,6 +2,8 @@
 
 Bristol COMS10009_2018 Object Oriented Programming (Y1) - An implementation of the Scotland Yard Board Game.
 
+Confirmed mark: 77 (as part of a larger submission)
+
 ## Background
 
 The skeleton code was provided as part of the assignment (commit 893bdac8d1), the primary task of this 
