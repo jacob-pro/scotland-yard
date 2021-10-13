@@ -5,19 +5,19 @@ import uk.ac.bris.cs.scotlandyard.multiplayer.ScotlandYardServer;
 
 public class MLGModel {
 
-	public ScotlandYardClient client;
-	public ScotlandYardServer server;
+    public ScotlandYardClient client;
+    public ScotlandYardServer server;
 
-	public void cleanUp() {
-		//Close client first so we don't have to worry about connection exceptions bubbling up
-		if (this.client != null) {
-			this.client.disconnect();
-			this.client = null;
-		}
-		if (this.server != null) {
-			this.server.close();
-			this.server = null;
-		}
-	}
+    public void cleanUp() {
+        //Close client first so we don't have to worry about connection exceptions bubbling up
+        if (this.client != null) {
+            this.client.disconnect();
+            this.client = null;
+        }
+        if (this.server != null) {
+            this.server.close();
+            this.server = null;
+        }
+    }
 
 }

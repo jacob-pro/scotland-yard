@@ -4,8 +4,8 @@ import java.util.List;
 
 public class ListHelper {
 
-	public static boolean containsDuplicates(List<?> list) {
-		return list.size() != list.stream().distinct().count();
-	}
+    public static boolean containsDuplicates(List<?> list) {
+        return list.size() != list.stream().distinct().count();
+    }
 
 }
